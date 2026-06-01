@@ -162,7 +162,7 @@ export default function LoginClient() {
 
   useEffect(() => {
     if (activeOAuthProvider === "Google" && typeof window !== "undefined" && (window as any).google) {
-      const googleClientId = "244199810219-4oksv4kvm7u97n3vm98i2ad3qvhu3i64.apps.googleusercontent.com";
+      const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "244199810219-4oksv4kvm7u97n3vm98i2ad3qvhu3i64.apps.googleusercontent.com";
       try {
         (window as any).google.accounts.id.initialize({
           client_id: googleClientId,
