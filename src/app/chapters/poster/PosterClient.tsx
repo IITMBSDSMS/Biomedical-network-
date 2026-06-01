@@ -76,8 +76,8 @@ export default function PosterClient() {
               <img src="/logo.png" alt="Healix BioLabs" className="w-9 h-9 rounded-full object-cover" />
             </div>
             <div>
-              <div className="text-xl font-heading font-black tracking-tight text-[#0D2329] uppercase">
-                BIO <span className="text-[#3B8E3E]">LABS</span>
+              <div className="text-xl font-heading font-black tracking-tight !text-[#0D2329] uppercase">
+                BIO <span className="!text-[#3B8E3E]">LABS</span>
               </div>
               <div className="text-[8px] font-bold uppercase tracking-widest text-slate-500">
                 Next Gen. Bio Solutions.
@@ -100,18 +100,18 @@ export default function PosterClient() {
           {/* Left Column: Headings & Text */}
           <div className="col-span-7 space-y-4">
             <div className="space-y-1">
-              <div className="text-[40px] font-black text-[#3B8E3E] tracking-tight leading-[1.02] uppercase font-heading" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+              <div className="text-[40px] font-black !text-[#3B8E3E] tracking-tight leading-[1.02] uppercase font-heading" style={{ fontFamily: "'Montserrat', sans-serif" }}>
                 BIO LABS
               </div>
-              <div className="text-[36px] font-black text-[#0D2329] tracking-tight leading-[1.02] uppercase font-heading" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+              <div className="text-[36px] font-black !text-[#0D2329] tracking-tight leading-[1.02] uppercase font-heading" style={{ fontFamily: "'Montserrat', sans-serif" }}>
                 CAMPUS
               </div>
-              <div className="text-[36px] font-black text-[#0D2329] tracking-tight leading-[1.02] uppercase font-heading" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+              <div className="text-[36px] font-black !text-[#0D2329] tracking-tight leading-[1.02] uppercase font-heading" style={{ fontFamily: "'Montserrat', sans-serif" }}>
                 AMBASSADOR
               </div>
               {/* Handwriting font for 'Program' */}
               <div 
-                className="text-5xl font-extrabold text-[#3B8E3E] lowercase -mt-3 ml-2"
+                className="text-5xl font-extrabold !text-[#3B8E3E] lowercase -mt-3 ml-2"
                 style={{ fontFamily: "'Great Vibes', cursive, sans-serif" }}
               >
                 program
@@ -119,13 +119,13 @@ export default function PosterClient() {
             </div>
 
             <div className="border-l-4 border-[#3B8E3E] pl-3 py-1">
-              <div className="text-[10px] font-black uppercase tracking-widest text-[#0D2329] leading-tight">
+              <div className="text-[10px] font-black uppercase tracking-widest !text-[#0D2329] leading-tight">
                 Be the Voice.
               </div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-[#3B8E3E] leading-tight my-0.5">
+              <div className="text-[10px] font-black uppercase tracking-widest !text-[#3B8E3E] leading-tight my-0.5">
                 Inspire Change.
               </div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-[#0D2329] leading-tight">
+              <div className="text-[10px] font-black uppercase tracking-widest !text-[#0D2329] leading-tight">
                 Build the Future.
               </div>
             </div>
@@ -197,7 +197,7 @@ export default function PosterClient() {
               <div className="w-6 h-6 bg-[#3B8E3E]/10 rounded-full flex items-center justify-center text-[#3B8E3E]">
                 <Users className="w-3.5 h-3.5" />
               </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#0D2329]">Who Can Apply?</h3>
+              <h3 className="text-xs font-black uppercase tracking-wider !text-[#0D2329]">Who Can Apply?</h3>
             </div>
             <ul className="space-y-2.5">
               <li className="flex items-center space-x-2 text-[10px] text-slate-700 font-bold">
@@ -225,7 +225,7 @@ export default function PosterClient() {
               <div className="w-6 h-6 bg-[#3B8E3E]/10 rounded-full flex items-center justify-center text-[#3B8E3E]">
                 <Gift className="w-3.5 h-3.5" />
               </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#0D2329]">What You Get</h3>
+              <h3 className="text-xs font-black uppercase tracking-wider !text-[#0D2329]">What You Get</h3>
             </div>
             <ul className="space-y-2.5">
               <li className="flex items-center space-x-2 text-[10px] text-slate-700 font-bold">
@@ -259,7 +259,7 @@ export default function PosterClient() {
 
             {/* Apply Message */}
             <div className="flex-1 px-4">
-              <div className="text-[10px] font-black uppercase tracking-wider text-[#0D2329]">Apply Now!</div>
+              <div className="text-[10px] font-black uppercase tracking-wider !text-[#0D2329]">Apply Now!</div>
               <div className="text-[8px] font-semibold text-slate-500 mt-0.5">
                 Scan the QR code to load the Ambassador Application form and launch your campus division.
               </div>
@@ -268,7 +268,7 @@ export default function PosterClient() {
             {/* QR Code Graphic */}
             <div className="flex flex-col items-center shrink-0 bg-white border border-slate-200 p-2 rounded-xl text-center">
               <img src={qrCodeUrl} alt="Scan to Apply" className="w-[64px] h-[64px]" />
-              <span className="text-[6px] font-black uppercase tracking-widest text-[#0D2329] mt-1.5 block">
+              <span className="text-[6px] font-black uppercase tracking-widest !text-[#0D2329] mt-1.5 block">
                 Scan To Apply
               </span>
             </div>
