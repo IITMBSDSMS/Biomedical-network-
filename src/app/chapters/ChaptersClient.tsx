@@ -304,7 +304,7 @@ export default function ChaptersClient({ currentUser }: ChaptersClientProps) {
           <motion.div
             key={activeSlide.id}
             initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 0.35, scale: 1 }}
+            animate={{ opacity: 0.6, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
             className="absolute inset-0 w-full h-full"
@@ -313,9 +313,9 @@ export default function ChaptersClient({ currentUser }: ChaptersClientProps) {
             <img
               src={activeSlide.image}
               alt={activeSlide.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover brightness-[1.1] contrast-[1.05]"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#070B13] via-[#070B13]/70 to-[#070B13]/25" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#070B13] via-[#070B13]/55 to-[#070B13]/15" />
             <div className="absolute inset-0 bg-gradient-to-r from-[#070B13] via-transparent to-transparent hidden lg:block" />
           </motion.div>
         </AnimatePresence>
