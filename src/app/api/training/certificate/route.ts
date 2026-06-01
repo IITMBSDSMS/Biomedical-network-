@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       },
     });
 
-    const completedIndexes = progress.map((p) => p.moduleIndex);
+    const completedIndexes = progress.map((p: any) => p.moduleIndex);
     const hasCompletedAll = [0, 1, 2, 3].every((idx) => completedIndexes.includes(idx));
 
     if (!hasCompletedAll) {
