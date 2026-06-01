@@ -1,0 +1,26 @@
+{
+  "videoSection": {
+    "youtubeUrl": "https://www.youtube.com/embed/815mO_K6Wk8",
+    "coverImage": "/uploads/video-covers/1780312156330-amv324oaa1l.png",
+    "title": "Scope In Medical Research ",
+    "subtitle": "Institutional Keynote",
+    "duration": "6:24 Mins"
+  },
+  "chapters": {
+    "chap-1": {
+      "image": "/uploads/chapters/1780307955229-i9qd2m7tk8f.png"
+    },
+    "chap-2": {
+      "image": "/uploads/chapters/1780308102204-ozapdkft1i.png"
+    },
+    "chap-3": {
+      "image": "/uploads/chapters/1780308226051-b1cbi6gn03h.png"
+    },
+    "chap-4": {
+      "image": "/bits_pilani_campus.png"
+    },
+    "chap-5": {
+      "image": "/uploads/chapters/1780308302812-pb1qkbrsqk.png"
+    }
+  }
+}

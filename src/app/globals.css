@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import "tailwindcss";
+
+/* ================================================================
+   DESIGN TOKENS
+   ================================================================ */
+:root {
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --background: #070B13;
+  --foreground: #CBD5E1; /* slate-300 — softer default text */
+  --primary-yellow: #F59E0B;
+  --research-blue: #F1F5F9;
+  --accent-blue: #3B82F6;
+  --border: #1E293B;
+  --card-bg: #0B0F19;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-display);
+  --color-primary-yellow: var(--primary-yellow);
+  --color-research-blue: var(--research-blue);
+  --color-accent-blue: var(--accent-blue);
+  --color-brand-black: #070B13;
+  --color-brand-white: #FFFFFF;
+  --color-border: var(--border);
+  --color-card: var(--card-bg);
+}
+
+/* ================================================================
+   GLOBAL BASE STYLES
+   ================================================================ */
+html {
+  scroll-behavior: smooth;
+  text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  font-weight: 400;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ================================================================
+   TYPOGRAPHY SCALE — Headings
+   ================================================================ */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: #F1F5F9; /* research-blue */
+}
+
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; }
+h2 { font-size: clamp(1.5rem, 3.5vw, 2.5rem); font-weight: 800; }
+h3 { font-size: clamp(1.125rem, 2.5vw, 1.75rem); font-weight: 700; }
+h4 { font-size: clamp(1rem, 2vw, 1.25rem); font-weight: 700; }
+h5 { font-size: 1rem; font-weight: 600; }
+h6 { font-size: 0.875rem; font-weight: 600; }
+
+/* Body copy */
+p {
+  line-height: 1.75;
+  color: #94A3B8; /* slate-400 */
+}
+
+/* Links */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Labels / overlines */
+.label-overline {
+  font-family: var(--font-body);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748B;
+}
+
+/* ================================================================
+   SCROLLBAR
+   ================================================================ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #070B13; }
+::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+/* ================================================================
+   UTILITY CLASSES
+   ================================================================ */
+
+/* Subtle grid overlay for backgrounds */
+.grid-overlay {
+  background-image:
+    linear-gradient(to right, rgba(30,41,59,0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30,41,59,0.4) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Shimmer loading skeleton */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(30,41,59,0.6) 25%,
+    rgba(51,65,85,0.8) 50%,
+    rgba(30,41,59,0.6) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-anim 1.6s infinite;
+}
+
+@keyframes shimmer-anim {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Marquee for scrolling text */
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Drag-and-drop zone active state */
+.dnd-active {
+  border-color: #3B82F6 !important;
+  background-color: rgba(59,130,246,0.06) !important;
+}
+
+/* Focus ring for accessibility */
+:focus-visible {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Glass card utility */
+.glass-card {
+  background: rgba(11,15,25,0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(30,41,59,0.8);
+}
+
+/* Glow effects */
+.glow-blue {
+  box-shadow: 0 0 30px rgba(59,130,246,0.15), 0 0 60px rgba(59,130,246,0.06);
+}
+.glow-yellow {
+  box-shadow: 0 0 30px rgba(245,158,11,0.15), 0 0 60px rgba(245,158,11,0.06);
+}
+
+/* ================================================================
+   PAGE SECTION SPACING HELPERS
+   ================================================================ */
+.section-py { padding-top: 5rem; padding-bottom: 5rem; }
+.section-px { padding-left: 1.5rem; padding-right: 1.5rem; }
+
+@media (min-width: 640px) {
+  .section-px { padding-left: 2rem; padding-right: 2rem; }
+}
+@media (min-width: 1024px) {
+  .section-px { padding-left: 3rem; padding-right: 3rem; }
+}
+
+/* ================================================================
+   BADGE COMPONENT
+   ================================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid;
+}
