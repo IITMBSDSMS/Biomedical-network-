@@ -353,6 +353,14 @@ export default function ChaptersClient({ currentUser }: ChaptersClientProps) {
           >
             Apply Ambassador
           </button>
+          <a
+            href="/chapters/poster"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-600/90 text-white text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer flex items-center space-x-1 shadow-md shadow-emerald-500/15"
+          >
+            <span>Get Poster</span>
+          </a>
         </div>
       </div>
 
