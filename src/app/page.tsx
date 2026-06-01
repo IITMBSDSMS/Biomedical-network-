@@ -14,21 +14,31 @@ export default async function Home() {
   const currentUser = await getCurrentUser();
 
   // Query verified researchers
-  const featuredResearchers = await prisma.researcher.findMany({
-    where: { isVerified: true },
-    take: 3,
-    orderBy: { researchScore: "desc" },
-  });
+  let featuredResearchers: any[] = [];
+  try {
+    featuredResearchers = await prisma.researcher.findMany({
+      where: { isVerified: true },
+      take: 3,
+      orderBy: { researchScore: "desc" },
+    });
+  } catch (err) {
+    console.warn("Database offline, using empty featuredResearchers fallback:", err);
+  }
 
   // Query approved publications
-  const featuredPublications = await prisma.publication.findMany({
-    where: { isApproved: true },
-    take: 3,
-    include: {
-      researcher: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  let featuredPublications: any[] = [];
+  try {
+    featuredPublications = await prisma.publication.findMany({
+      where: { isApproved: true },
+      take: 3,
+      include: {
+        researcher: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    console.warn("Database offline, using empty featuredPublications fallback:", err);
+  }
 
   return (
     <div className="relative min-h-screen bg-background flex flex-col justify-between overflow-x-hidden">

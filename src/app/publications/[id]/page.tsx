@@ -20,10 +20,15 @@ interface PublicationPageProps {
 
 export async function generateMetadata({ params }: PublicationPageProps): Promise<Metadata> {
   const { id } = await params;
-  const publication = await prisma.publication.findUnique({
-    where: { id },
-    select: { title: true, abstract: true },
-  });
+  let publication = null;
+  try {
+    publication = await prisma.publication.findUnique({
+      where: { id },
+      select: { title: true, abstract: true },
+    });
+  } catch (err) {
+    console.warn("Database offline during metadata generation:", err);
+  }
 
   if (!publication) {
     return {
@@ -44,12 +49,17 @@ export default async function PublicationDetailPage({ params }: PublicationPageP
   const currentUser = await getCurrentUser();
 
   // Find the publication with ID
-  const publication = await prisma.publication.findUnique({
-    where: { id },
-    include: {
-      researcher: true,
-    },
-  });
+  let publication = null;
+  try {
+    publication = await prisma.publication.findUnique({
+      where: { id },
+      include: {
+        researcher: true,
+      },
+    });
+  } catch (err) {
+    console.warn("Database offline, publication details unavailable:", err);
+  }
 
   // Verify that the publication exists and is approved,
   // or allow the owner or an admin to preview it!

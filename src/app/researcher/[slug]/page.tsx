@@ -20,10 +20,15 @@ interface ResearcherPageProps {
 
 export async function generateMetadata({ params }: ResearcherPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const researcher = await prisma.researcher.findUnique({
-    where: { slug },
-    select: { fullName: true, bio: true, institutionName: true },
-  });
+  let researcher = null;
+  try {
+    researcher = await prisma.researcher.findUnique({
+      where: { slug },
+      select: { fullName: true, bio: true, institutionName: true },
+    });
+  } catch (err) {
+    console.warn("Database offline during researcher metadata generation:", err);
+  }
 
   if (!researcher) {
     return {
@@ -42,19 +47,24 @@ export default async function ResearcherProfilePage({ params }: ResearcherPagePr
   const currentUser = await getCurrentUser();
 
   // Find the researcher with slug
-  const researcher = await prisma.researcher.findUnique({
-    where: { slug },
-    include: {
-      publications: {
-        orderBy: { createdAt: "desc" },
-      },
-      projectsJoined: {
-        include: {
-          project: true,
+  let researcher = null;
+  try {
+    researcher = await prisma.researcher.findUnique({
+      where: { slug },
+      include: {
+        publications: {
+          orderBy: { createdAt: "desc" },
+        },
+        projectsJoined: {
+          include: {
+            project: true,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (err) {
+    console.warn("Database offline, researcher profile details unavailable:", err);
+  }
 
   if (!researcher) {
     notFound();

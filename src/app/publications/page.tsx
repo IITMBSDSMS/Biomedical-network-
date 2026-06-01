@@ -21,23 +21,32 @@ export default async function PublicationsPage() {
   // Check if current user has researcher status
   let researcher = null;
   if (currentUser) {
-    researcher = await prisma.researcher.findUnique({
-      where: { userId: currentUser.id },
-    });
+    try {
+      researcher = await prisma.researcher.findUnique({
+        where: { userId: currentUser.id },
+      });
+    } catch (err) {
+      console.warn("Database offline, using null researcher fallback:", err);
+    }
   }
 
   // Load all approved publications
-  const publications = await prisma.publication.findMany({
-    where: {
-      isApproved: true,
-    },
-    include: {
-      researcher: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  let publications: any[] = [];
+  try {
+    publications = await prisma.publication.findMany({
+      where: {
+        isApproved: true,
+      },
+      include: {
+        researcher: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  } catch (err) {
+    console.warn("Database offline, using empty publications fallback:", err);
+  }
 
   return (
     <div className="relative min-h-screen bg-background flex flex-col justify-between overflow-x-hidden">

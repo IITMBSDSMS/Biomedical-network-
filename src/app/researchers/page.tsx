@@ -19,11 +19,16 @@ export default async function ResearchersPage() {
   const currentUser = await getCurrentUser();
 
   // Load all researchers sorted by research score
-  const researchers = await prisma.researcher.findMany({
-    orderBy: {
-      researchScore: "desc",
-    },
-  });
+  let researchers: any[] = [];
+  try {
+    researchers = await prisma.researcher.findMany({
+      orderBy: {
+        researchScore: "desc",
+      },
+    });
+  } catch (err) {
+    console.warn("Database offline, using empty researchers fallback:", err);
+  }
 
   return (
     <div className="relative min-h-screen bg-background flex flex-col justify-between overflow-x-hidden">

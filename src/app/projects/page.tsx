@@ -25,45 +25,57 @@ export default async function ProjectsPage() {
   let allResearchers: any[] = [];
 
   if (currentUser) {
-    researcher = await prisma.researcher.findUnique({
-      where: { userId: currentUser.id },
-    });
+    try {
+      researcher = await prisma.researcher.findUnique({
+        where: { userId: currentUser.id },
+      });
+    } catch (err) {
+      console.warn("Database offline, using null researcher fallback:", err);
+    }
 
     if (researcher) {
       // Find projects where researcher is a member
-      projects = await prisma.project.findMany({
-        where: {
-          members: {
-            some: { researcherId: researcher.id },
-          },
-        },
-        include: {
-          creator: true,
-          members: {
-            include: {
-              researcher: true,
+      try {
+        projects = await prisma.project.findMany({
+          where: {
+            members: {
+              some: { researcherId: researcher.id },
             },
           },
-        },
-        orderBy: {
-          updatedAt: "desc",
-        },
-      });
+          include: {
+            creator: true,
+            members: {
+              include: {
+                researcher: true,
+              },
+            },
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+        });
+      } catch (err) {
+        console.warn("Database offline, using empty projects fallback:", err);
+      }
 
       // Find other researchers to invite
-      allResearchers = await prisma.researcher.findMany({
-        where: {
-          NOT: { id: researcher.id },
-        },
-        select: {
-          id: true,
-          fullName: true,
-          institutionName: true,
-        },
-        orderBy: {
-          fullName: "asc",
-        },
-      });
+      try {
+        allResearchers = await prisma.researcher.findMany({
+          where: {
+            NOT: { id: researcher.id },
+          },
+          select: {
+            id: true,
+            fullName: true,
+            institutionName: true,
+          },
+          orderBy: {
+            fullName: "asc",
+          },
+        });
+      } catch (err) {
+        console.warn("Database offline, using empty allResearchers fallback:", err);
+      }
     }
   }
 
