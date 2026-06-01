@@ -178,6 +178,56 @@ export default function LoginClient() {
     }
   }, [activeOAuthProvider]);
 
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    const checkRedirectSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user && session.user.email) {
+          const email = session.user.email;
+          const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || email.split("@")[0];
+
+          // Sync user to database
+          await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email,
+              name,
+              role: "RESEARCHER",
+              triggerWelcome: true,
+            }),
+          });
+
+          handleLoginSuccess(email, session.access_token);
+        }
+      } catch (err) {
+        console.error("Failed to check Supabase redirect session:", err);
+      }
+    };
+
+    checkRedirectSession();
+  }, []);
+
+  const handleRealOAuthSignIn = async (provider: "github" | "linkedin_oidc") => {
+    setLoading(true);
+    setError("");
+    try {
+      const { error: oauthErr } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/login`,
+        },
+      });
+      if (oauthErr) throw oauthErr;
+    } catch (err: any) {
+      console.error(`${provider} OAuth trigger error:`, err);
+      setError(err.message || `${provider} authentication failed.`);
+      setLoading(false);
+    }
+  };
+
   // OTP Countdown timer
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -941,8 +991,12 @@ export default function LoginClient() {
                       whileTap={{ scale: 0.98 }}
                       type="button"
                       onClick={() => {
-                        setActiveOAuthProvider("GitHub");
-                        setSelectedProfileIndex(0);
+                        if (isSupabaseConfigured) {
+                          handleRealOAuthSignIn("github");
+                        } else {
+                          setActiveOAuthProvider("GitHub");
+                          setSelectedProfileIndex(0);
+                        }
                       }}
                       className="flex flex-col items-center justify-center bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800 hover:border-purple-500/30 py-2.5 rounded-xl transition-all duration-200 cursor-pointer text-slate-300 hover:text-white"
                     >
@@ -958,8 +1012,12 @@ export default function LoginClient() {
                       whileTap={{ scale: 0.98 }}
                       type="button"
                       onClick={() => {
-                        setActiveOAuthProvider("LinkedIn");
-                        setSelectedProfileIndex(0);
+                        if (isSupabaseConfigured) {
+                          handleRealOAuthSignIn("linkedin_oidc");
+                        } else {
+                          setActiveOAuthProvider("LinkedIn");
+                          setSelectedProfileIndex(0);
+                        }
                       }}
                       className="flex flex-col items-center justify-center bg-slate-900/40 hover:bg-slate-900/80 border border-slate-800 hover:border-cyan-500/30 py-2.5 rounded-xl transition-all duration-200 cursor-pointer text-slate-300 hover:text-white"
                     >
