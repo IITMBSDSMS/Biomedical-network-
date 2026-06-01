@@ -222,7 +222,7 @@ export default function ChaptersClient({ currentUser }: ChaptersClientProps) {
     startAutoplay();
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { collegeName, department, location, proposerName, proposerEmail } = registerForm;
     if (!collegeName || !department || !location || !proposerName || !proposerEmail) {
@@ -230,46 +230,62 @@ export default function ChaptersClient({ currentUser }: ChaptersClientProps) {
       return;
     }
 
-    const newChapter: Chapter = {
-      id: `chap-${Date.now()}`,
-      name: collegeName,
-      department: department,
-      location: location,
-      membersCount: 1,
-      established: "June 2026",
-      leadAmbassador: proposerName,
-      activeProjects: 0,
-      status: "Launching",
-      image: "/lab_workbench.png", // fallback placeholder image
-      description: registerForm.plannedActivities || "Proposing an official BioLabs academic division to run bioinformatics workflows and student research cohorts.",
-      achievements: [
-        `Initiated Setup proposal by ${proposerName}`,
-        "Pending official BioLabs academic board activation",
-        "Awaiting coordinator screening review"
-      ]
-    };
-
-    setChapters(prev => [...prev, newChapter]);
-    setRegisterSuccess(true);
-    
-    // Jump to the newly added chapter slide once modal is closed
-    setTimeout(() => {
-      setIsRegisterOpen(false);
-      setRegisterSuccess(false);
-      setRegisterForm({
-        collegeName: "",
-        department: "",
-        location: "",
-        proposerName: "",
-        proposerEmail: "",
-        plannedActivities: "",
-        proposedMentor: ""
+    try {
+      const response = await fetch("/api/chapters/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(registerForm),
       });
-      setActiveIndex(chapters.length); // Jump to new slide
-    }, 2200);
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "Submission failed");
+      }
+
+      const newChapter: Chapter = {
+        id: `chap-${Date.now()}`,
+        name: collegeName,
+        department: department,
+        location: location,
+        membersCount: 1,
+        established: "June 2026",
+        leadAmbassador: proposerName,
+        activeProjects: 0,
+        status: "Launching",
+        image: "/lab_workbench.png", // fallback placeholder image
+        description: registerForm.plannedActivities || "Proposing an official BioLabs academic division to run bioinformatics workflows and student research cohorts.",
+        achievements: [
+          `Initiated Setup proposal by ${proposerName}`,
+          "Pending official BioLabs academic board activation",
+          "Awaiting coordinator screening review"
+        ]
+      };
+
+      setChapters(prev => [...prev, newChapter]);
+      setRegisterSuccess(true);
+      
+      // Jump to the newly added chapter slide once modal is closed
+      setTimeout(() => {
+        setIsRegisterOpen(false);
+        setRegisterSuccess(false);
+        setRegisterForm({
+          collegeName: "",
+          department: "",
+          location: "",
+          proposerName: "",
+          proposerEmail: "",
+          plannedActivities: "",
+          proposedMentor: ""
+        });
+        setActiveIndex(chapters.length); // Jump to new slide
+      }, 2200);
+    } catch (err: any) {
+      console.error("Chapter registration submission error:", err);
+      alert(`Failed to submit chapter proposal: ${err.message}`);
+    }
   };
 
-  const handleAmbassadorSubmit = (e: React.FormEvent) => {
+  const handleAmbassadorSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { fullName, collegeName, email, sop } = ambassadorForm;
     if (!fullName || !collegeName || !email || !sop) {
@@ -277,21 +293,38 @@ export default function ChaptersClient({ currentUser }: ChaptersClientProps) {
       return;
     }
 
-    setAmbassadorSuccess(true);
-    setTimeout(() => {
-      setIsAmbassadorOpen(false);
-      setAmbassadorSuccess(false);
-      setAmbassadorForm({
-        fullName: "",
-        collegeName: "",
-        degreeProgram: "",
-        yearOfStudy: "3rd Year",
-        email: "",
-        sop: "",
-        linkedin: ""
+    try {
+      const response = await fetch("/api/chapters/ambassador", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ambassadorForm),
       });
-    }, 2200);
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "Submission failed");
+      }
+
+      setAmbassadorSuccess(true);
+      setTimeout(() => {
+        setIsAmbassadorOpen(false);
+        setAmbassadorSuccess(false);
+        setAmbassadorForm({
+          fullName: "",
+          collegeName: "",
+          degreeProgram: "",
+          yearOfStudy: "3rd Year",
+          email: "",
+          sop: "",
+          linkedin: ""
+        });
+      }, 2200);
+    } catch (err: any) {
+      console.error("Ambassador application submission error:", err);
+      alert(`Failed to submit application: ${err.message}`);
+    }
   };
+
 
   const activeSlide = chapters[activeIndex];
 

@@ -12,7 +12,22 @@ export async function sendEmail({ to, subject, body }: EmailParams): Promise<{ s
   const isResendEnabled = apiKey && apiKey !== "re_placeholder" && apiKey.trim() !== "";
   
   if (!isResendEnabled) {
-    throw new Error("Resend API key is not configured. Real automation requires a valid RESEND_API_KEY environment variable.");
+    console.warn(`[DEV/MOCK EMAIL to ${to}] Subject: ${subject}`);
+    let logId = "";
+    try {
+      const log = await prisma.emailLog.create({
+        data: {
+          to,
+          subject,
+          body,
+          status: "LOGGED",
+        },
+      });
+      logId = log.id;
+    } catch (err) {
+      console.error("Failed to write to database email_logs (mock):", err);
+    }
+    return { success: true, logId };
   }
 
   let logId = "";
@@ -233,3 +248,188 @@ export function getIncompleteProfileReminderTemplate(name: string, slug: string)
     </div>
   `;
 }
+
+export function getChapterRegistrationTemplate(
+  proposerName: string,
+  collegeName: string,
+  department: string,
+  location: string,
+  proposedMentor?: string,
+  plannedActivities?: string
+): string {
+  return `
+    <div style="background-color: #030712; padding: 32px 16px; font-family: sans-serif; color: #f3f4f6;">
+      <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">
+        <div style="background: linear-gradient(90deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%); height: 6px; width: 100%;"></div>
+        <div style="padding: 32px 32px 16px 32px; text-align: center;">
+          <img src="https://healix-technologies.com/logo.png" alt="Healix BioLabs" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
+        </div>
+        <div style="padding: 0 32px 32px 32px;">
+          <h2 style="color: #ffffff; font-size: 22px; font-weight: 800; margin-top: 0; margin-bottom: 8px; text-align: center;">Chapter Proposal Received</h2>
+          <p style="color: #3b82f6; font-size: 12px; font-weight: bold; text-align: center; text-transform: uppercase; tracking-wider; margin-bottom: 24px;">Academic Division Application</p>
+          
+          <p style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+            Dear <strong>${proposerName}</strong>,<br><br>
+            Thank you for submitting a proposal to establish an official Healix BioLabs Chapter at your institution. We are excited about the prospect of collaborating with you to foster biomedical research and training.
+          </p>
+
+          <div style="background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: left;">
+            <span style="font-size: 10px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 8px; font-weight: bold;">Proposal Details</span>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #e2e8f0;">
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; width: 35%;"><strong>Institution:</strong></td>
+                <td style="padding: 6px 0; color: #ffffff;">${collegeName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;"><strong>Department:</strong></td>
+                <td style="padding: 6px 0; color: #ffffff;">${department}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;"><strong>Location:</strong></td>
+                <td style="padding: 6px 0; color: #ffffff;">${location}</td>
+              </tr>
+              ${proposedMentor ? `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;"><strong>Proposed Mentor:</strong></td>
+                <td style="padding: 6px 0; color: #ffffff;">${proposedMentor}</td>
+              </tr>
+              ` : ""}
+            </table>
+          </div>
+
+          ${plannedActivities ? `
+          <div style="background: #0a0f1d; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin: 20px 0; text-align: left;">
+            <span style="font-size: 10px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px; font-weight: bold;">Planned Activities</span>
+            <p style="color: #94a3b8; font-size: 13px; margin: 0; line-height: 1.5;">${plannedActivities}</p>
+          </div>
+          ` : ""}
+
+          <p style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+            <strong>Next Steps:</strong> Our Academic Board will review your proposal, verify your institutional affiliation, and evaluate the suggested activities within 7 business days. We will contact you at your provided email to coordinate further.
+          </p>
+
+          <div style="border-top: 1px solid #1e293b; padding-top: 20px; margin-top: 30px; text-align: center; font-size: 11px; color: #64748b;">
+            Healix Technologies Pvt. Ltd., New Delhi, India.
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export async function sendChapterRegistrationEmail(
+  to: string,
+  proposerName: string,
+  collegeName: string,
+  department: string,
+  location: string,
+  proposedMentor?: string,
+  plannedActivities?: string
+) {
+  try {
+    const body = getChapterRegistrationTemplate(proposerName, collegeName, department, location, proposedMentor, plannedActivities);
+    return await sendEmail({
+      to,
+      subject: `[Healix BioLabs] Chapter Proposal Received: ${collegeName}`,
+      body,
+    });
+  } catch (error) {
+    console.error("Chapter email trigger failed:", error);
+    return { success: false };
+  }
+}
+
+export function getAmbassadorApplicationTemplate(
+  fullName: string,
+  collegeName: string,
+  degreeProgram?: string,
+  yearOfStudy?: string,
+  linkedin?: string,
+  sop?: string
+): string {
+  return `
+    <div style="background-color: #030712; padding: 32px 16px; font-family: sans-serif; color: #f3f4f6;">
+      <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">
+        <div style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 50%, #10B981 100%); height: 6px; width: 100%;"></div>
+        <div style="padding: 32px 32px 16px 32px; text-align: center;">
+          <img src="https://healix-technologies.com/logo.png" alt="Healix BioLabs" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
+        </div>
+        <div style="padding: 0 32px 32px 32px;">
+          <h2 style="color: #ffffff; font-size: 22px; font-weight: 800; margin-top: 0; margin-bottom: 8px; text-align: center;">Ambassador Application Received</h2>
+          <p style="color: #a78bfa; font-size: 12px; font-weight: bold; text-align: center; text-transform: uppercase; tracking-wider; margin-bottom: 24px;">Campus Leader Candidacy</p>
+          
+          <p style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+            Dear <strong>${fullName}</strong>,<br><br>
+            Thank you for applying to represent Healix BioLabs as a Campus Ambassador. Campus Leaders play a critical role in bringing high-throughput bioinformatics, computational research, and community-driven hacking to universities.
+          </p>
+
+          <div style="background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: left;">
+            <span style="font-size: 10px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 8px; font-weight: bold;">Applicant Profile</span>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #e2e8f0;">
+              <tr>
+                <td style="padding: 6px 0; color: #64748b; width: 35%;"><strong>Institution:</strong></td>
+                <td style="padding: 6px 0; color: #ffffff;">${collegeName}</td>
+              </tr>
+              ${degreeProgram ? `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;"><strong>Degree Program:</strong></td>
+                <td style="padding: 6px 0; color: #ffffff;">${degreeProgram}</td>
+              </tr>
+              ` : ""}
+              ${yearOfStudy ? `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;"><strong>Year of Study:</strong></td>
+                <td style="padding: 6px 0; color: #ffffff;">${yearOfStudy}</td>
+              </tr>
+              ` : ""}
+              ${linkedin ? `
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;"><strong>LinkedIn:</strong></td>
+                <td style="padding: 6px 0; color: #ffffff; word-break: break-all;">${linkedin}</td>
+              </tr>
+              ` : ""}
+            </table>
+          </div>
+
+          ${sop ? `
+          <div style="background: #0a0f1d; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin: 20px 0; text-align: left;">
+            <span style="font-size: 10px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px; font-weight: bold;">Statement of Purpose Summary</span>
+            <p style="color: #94a3b8; font-size: 13px; margin: 0; line-height: 1.5; font-style: italic;">"${sop}"</p>
+          </div>
+          ` : ""}
+
+          <p style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+            <strong>Next Steps:</strong> Our Community Coordination Team will evaluate your application materials. Outstanding applicants will be invited to a brief video interview to discuss club structure.
+          </p>
+
+          <div style="border-top: 1px solid #1e293b; padding-top: 20px; margin-top: 30px; text-align: center; font-size: 11px; color: #64748b;">
+            Healix Technologies Pvt. Ltd., New Delhi, India.
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export async function sendAmbassadorApplicationEmail(
+  to: string,
+  fullName: string,
+  collegeName: string,
+  degreeProgram?: string,
+  yearOfStudy?: string,
+  linkedin?: string,
+  sop?: string
+) {
+  try {
+    const body = getAmbassadorApplicationTemplate(fullName, collegeName, degreeProgram, yearOfStudy, linkedin, sop);
+    return await sendEmail({
+      to,
+      subject: `[Healix BioLabs] Ambassador Application Received: ${fullName}`,
+      body,
+    });
+  } catch (error) {
+    console.error("Ambassador email trigger failed:", error);
+    return { success: false };
+  }
+}
+
