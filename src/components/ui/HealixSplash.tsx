@@ -71,7 +71,7 @@ export default function HealixSplash() {
             {/* Logo Center Card */}
             <div className="absolute inset-7 rounded-full bg-white shadow-2xl border border-slate-100 flex items-center justify-center p-3.5">
               <motion.img
-                src="https://healix-technologies.com/logo.png"
+                src="/logo.png"
                 alt="Healix BioLabs Logo"
                 className="w-full h-full object-contain"
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -89,7 +89,7 @@ export default function HealixSplash() {
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.35 }}
               className="text-center"
             >
-              <h1 className="text-3xl font-heading font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-heading font-extrabold !text-slate-900 tracking-tight">
                 Healix{" "}
                 <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent">
                   BioLabs
@@ -99,7 +99,7 @@ export default function HealixSplash() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.65, duration: 0.4 }}
-                className="text-[10px] text-slate-500 uppercase tracking-[0.35em] mt-2.5 font-bold"
+                className="text-[10px] !text-slate-500 uppercase tracking-[0.35em] mt-2.5 font-bold"
               >
                 India&apos;s Biomedical Research Network
               </motion.p>
