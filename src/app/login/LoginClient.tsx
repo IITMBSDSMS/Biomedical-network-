@@ -66,7 +66,117 @@ export default function LoginClient() {
     if (key && key !== "pk_test_placeholder" && key.startsWith("pk_")) {
       setIsClerkEnabled(true);
     }
+
+    // Load Google Identity Services SDK script
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
   }, []);
+
+  const handleGoogleCredentialResponse = async (response: any) => {
+    const idToken = response.credential;
+    if (!idToken) return;
+
+    setOauthLoading(true);
+    setError("");
+
+    try {
+      // Decode JWT token payload
+      const base64Url = idToken.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        window
+          .atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      const decoded = JSON.parse(jsonPayload);
+      const email = decoded.email;
+      const name = decoded.name || email.split("@")[0];
+
+      if (isSupabaseConfigured) {
+        const { data, error: authError } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: idToken,
+        });
+
+        if (authError) throw authError;
+
+        // Sync profile to database
+        const syncRes = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            name,
+            role: "RESEARCHER",
+            triggerWelcome: true,
+          }),
+        });
+        const syncData = await syncRes.json();
+        if (syncData.error) throw new Error(syncData.error);
+
+        if (data.session) {
+          setOauthSuccess(true);
+          setTimeout(() => {
+            handleLoginSuccess(email, data.session.access_token);
+            setActiveOAuthProvider(null);
+            setOauthSuccess(false);
+          }, 900);
+        }
+      } else {
+        // Sync locally in sandbox
+        await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            name,
+            role: "RESEARCHER",
+            triggerWelcome: true,
+          }),
+        });
+
+        setOauthSuccess(true);
+        setTimeout(() => {
+          handleLoginSuccess(email);
+          setActiveOAuthProvider(null);
+          setOauthSuccess(false);
+        }, 900);
+      }
+    } catch (err: any) {
+      console.error("Google Auth error:", err);
+      setError(err.message || "Google Sign-In failed.");
+      setOauthLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeOAuthProvider === "Google" && typeof window !== "undefined" && (window as any).google) {
+      const googleClientId = "244199810219-4oksv4kvm7u97n3vm98i2ad3qvhu3i64.apps.googleusercontent.com";
+      try {
+        (window as any).google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: handleGoogleCredentialResponse,
+        });
+        (window as any).google.accounts.id.renderButton(
+          document.getElementById("google-signin-button-container"),
+          { theme: "outline", size: "large", width: 280 }
+        );
+      } catch (err) {
+        console.error("Failed to render Google Sign-In button:", err);
+      }
+    }
+  }, [activeOAuthProvider]);
 
   // OTP Countdown timer
   useEffect(() => {
@@ -997,70 +1107,88 @@ export default function LoginClient() {
                     exit={{ opacity: 0 }}
                     className="space-y-4"
                   >
-                    {/* Permissions list */}
-                    <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-3 text-[10px] text-slate-400 leading-relaxed space-y-1">
-                      <span className="font-bold text-slate-400 uppercase tracking-wider block mb-1">Permissions requested:</span>
-                      <p>• Access your public profile details</p>
-                      <p>• Fetch verified primary email address</p>
-                    </div>
-
-                    {/* Profile selector dropdown */}
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">
-                        Select Sandbox Profile
-                      </label>
-                      <div className="space-y-2">
-                        {OAUTH_PROFILES[activeOAuthProvider].map((profile, i) => {
-                          const isSelected = selectedProfileIndex === i;
-                          return (
-                            <button
-                              key={profile.email}
-                              onClick={() => setSelectedProfileIndex(i)}
-                              className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
-                                isSelected 
-                                  ? "bg-slate-900 border-accent-blue/50 text-white" 
-                                  : "bg-slate-950/40 border-slate-800 hover:bg-slate-900 hover:border-slate-800 text-slate-400"
-                              }`}
-                            >
-                              <div className="flex items-center space-x-3">
-                                <img
-                                  src={profile.avatar}
-                                  alt={profile.name}
-                                  className="w-7 h-7 rounded-full border border-slate-800 shrink-0"
-                                />
-                                <div className="min-w-0">
-                                  <p className={`text-xs font-bold ${isSelected ? "text-slate-200" : "text-slate-400"}`}>{profile.name}</p>
-                                  <p className="text-[9px] truncate max-w-[170px]">{profile.email}</p>
-                                </div>
-                              </div>
-                              {isSelected && (
-                                <div className="w-4 h-4 rounded-full bg-accent-blue/15 border border-accent-blue/30 flex items-center justify-center text-accent-blue shrink-0">
-                                  <Check className="w-2.5 h-2.5" />
-                                </div>
-                              )}
-                            </button>
-                          );
-                        })}
+                    {activeOAuthProvider === "Google" ? (
+                      <div className="space-y-4 flex flex-col items-center">
+                        <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-4 text-[11px] text-slate-400 leading-relaxed text-center w-full">
+                          <p>Click the official Google button below to sign in using your Google account in our secure authentication environment.</p>
+                        </div>
+                        <div id="google-signin-button-container" className="my-2 min-h-[40px] w-full flex justify-center" />
+                        <button
+                          type="button"
+                          onClick={() => setActiveOAuthProvider(null)}
+                          className="w-full bg-slate-950/60 border border-slate-800 hover:bg-slate-950 hover:border-slate-800 text-slate-300 font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all cursor-pointer text-center"
+                        >
+                          Cancel
+                        </button>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        {/* Permissions list */}
+                        <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-3 text-[10px] text-slate-400 leading-relaxed space-y-1">
+                          <span className="font-bold text-slate-400 uppercase tracking-wider block mb-1">Permissions requested:</span>
+                          <p>• Access your public profile details</p>
+                          <p>• Fetch verified primary email address</p>
+                        </div>
 
-                    {/* Action buttons */}
-                    <div className="grid grid-cols-2 gap-3 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setActiveOAuthProvider(null)}
-                        className="bg-slate-950/60 border border-slate-800 hover:bg-slate-950 hover:border-slate-800 text-slate-300 font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all cursor-pointer text-center"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleOAuthSubmit}
-                        className="bg-accent-blue hover:bg-accent-blue/90 text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all cursor-pointer text-center shadow-sm shadow-blue-500/5"
-                      >
-                        Authorize
-                      </button>
-                    </div>
+                        {/* Profile selector dropdown */}
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">
+                            Select Sandbox Profile
+                          </label>
+                          <div className="space-y-2">
+                            {OAUTH_PROFILES[activeOAuthProvider].map((profile, i) => {
+                              const isSelected = selectedProfileIndex === i;
+                              return (
+                                <button
+                                  key={profile.email}
+                                  onClick={() => setSelectedProfileIndex(i)}
+                                  className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
+                                    isSelected 
+                                      ? "bg-slate-900 border-accent-blue/50 text-white" 
+                                      : "bg-slate-950/40 border-slate-800 hover:bg-slate-900 hover:border-slate-800 text-slate-400"
+                                  }`}
+                                >
+                                  <div className="flex items-center space-x-3">
+                                    <img
+                                      src={profile.avatar}
+                                      alt={profile.name}
+                                      className="w-7 h-7 rounded-full border border-slate-800 shrink-0"
+                                    />
+                                    <div className="min-w-0">
+                                      <p className={`text-xs font-bold ${isSelected ? "text-slate-200" : "text-slate-400"}`}>{profile.name}</p>
+                                      <p className="text-[9px] truncate max-w-[170px]">{profile.email}</p>
+                                    </div>
+                                  </div>
+                                  {isSelected && (
+                                    <div className="w-4 h-4 rounded-full bg-accent-blue/15 border border-accent-blue/30 flex items-center justify-center text-accent-blue shrink-0">
+                                      <Check className="w-2.5 h-2.5" />
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setActiveOAuthProvider(null)}
+                            className="bg-slate-950/60 border border-slate-800 hover:bg-slate-950 hover:border-slate-800 text-slate-300 font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all cursor-pointer text-center"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleOAuthSubmit}
+                            className="bg-accent-blue hover:bg-accent-blue/90 text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all cursor-pointer text-center shadow-sm shadow-blue-500/5"
+                          >
+                            Authorize
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
