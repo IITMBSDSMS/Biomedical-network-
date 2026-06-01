@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 /**
- * HealixSplash — Pure white background, big fast-spinning circular ring preloader with official logo.
+ * HealixSplash — Pure white background, big fast-spinning circular ring preloader with official logo in circular crop.
  */
 export default function HealixSplash() {
   const [visible, setVisible] = useState(false);
@@ -68,12 +68,12 @@ export default function HealixSplash() {
               className="absolute inset-3 rounded-full border-2 border-t-cyan-500 border-r-transparent border-b-purple-500 border-l-transparent opacity-90"
             />
 
-            {/* Logo Center Card */}
-            <div className="absolute inset-7 rounded-full bg-white shadow-2xl border border-slate-100 flex items-center justify-center p-3.5">
+            {/* Logo Center Card (Circle) */}
+            <div className="absolute inset-7 rounded-full bg-white shadow-2xl border border-slate-100 flex items-center justify-center p-3.5 overflow-hidden">
               <motion.img
                 src="/logo.png"
                 alt="Healix BioLabs Logo"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover rounded-full"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.4, delay: 0.15 }}
