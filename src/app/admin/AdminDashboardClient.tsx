@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Users, FileText, FolderGit2, GraduationCap, ShieldCheck, Check, X, ShieldAlert, Award, Calendar, RefreshCw, Mail, Clipboard, Send, Video, ImageIcon, Upload, Link as LinkIcon, Loader2, ExternalLink, Building } from "lucide-react";
+import { Users, FileText, FolderGit2, GraduationCap, ShieldCheck, Check, X, ShieldAlert, Award, Calendar, RefreshCw, Mail, Clipboard, Send, Video, ImageIcon, Upload, Link as LinkIcon, Loader2, ExternalLink, Building, Flag, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AdminDashboardProps {
@@ -10,6 +10,7 @@ interface AdminDashboardProps {
   initialPublications: any[];
   initialFellowshipApplications: any[];
   initialEmailLogs: any[];
+  initialAmbassadorApplications: any[];
   projectCount: number;
 }
 
@@ -27,18 +28,20 @@ export default function AdminDashboardClient({
   initialPublications,
   initialFellowshipApplications,
   initialEmailLogs,
+  initialAmbassadorApplications,
   projectCount,
 }: AdminDashboardProps) {
   const router = useRouter();
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<"researchers" | "publications" | "fellowships" | "emails" | "video" | "chapters">("researchers");
+  const [activeTab, setActiveTab] = useState<"researchers" | "publications" | "fellowships" | "emails" | "video" | "chapters" | "ambassadors">("researchers");
   
   // Data lists (in local state so toggle actions react immediately)
   const [researchers, setResearchers] = useState(initialResearchers);
   const [publications, setPublications] = useState(initialPublications);
   const [fellowships, setFellowships] = useState(initialFellowshipApplications);
   const [emailLogs, setEmailLogs] = useState(initialEmailLogs);
+  const [ambassadors, setAmbassadors] = useState(initialAmbassadorApplications);
   
   // States
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -290,7 +293,142 @@ export default function AdminDashboardClient({
     }
   };
 
-  // 4. Trigger profile incomplete reminder scan
+  // 4. Resolve ambassador application status
+  const handleResolveAmbassador = async (applicationId: string, status: "APPROVED" | "REJECTED") => {
+    setActionLoading(applicationId);
+    try {
+      const res = await fetch("/api/admin/ambassadors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId, status }),
+      });
+      if (res.ok) {
+        setAmbassadors(ambassadors.map((a: any) => a.id === applicationId ? { ...a, status } : a));
+        triggerToast(`Ambassador application ${status.toLowerCase()} successfully.`);
+      } else {
+        triggerToast("Failed to update ambassador status.", "error");
+      }
+    } catch (err) {
+      triggerToast("An error occurred.", "error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // 5. Download ambassadors list as PDF
+  const handleDownloadAmbassadorsPDF = async () => {
+    setActionLoading("pdf");
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
+
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const now = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+
+      // Header bar
+      doc.setFillColor(10, 15, 30);
+      doc.rect(0, 0, 297, 28, "F");
+
+      // Logo text
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(250, 204, 21);
+      doc.text("HEALIX BIOLABS", 14, 12);
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text("Biomedical Research Network", 14, 18);
+
+      // Title on right
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(96, 165, 250);
+      doc.text("Campus Ambassador Applications", 297 - 14, 12, { align: "right" });
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Generated: ${now}  |  Total: ${ambassadors.length}`, 297 - 14, 18, { align: "right" });
+
+      // Divider
+      doc.setDrawColor(30, 41, 59);
+      doc.setLineWidth(0.5);
+      doc.line(14, 29, 283, 29);
+
+      // Stats row
+      const pending = ambassadors.filter((a: any) => a.status === "PENDING").length;
+      const approved = ambassadors.filter((a: any) => a.status === "APPROVED").length;
+      const rejected = ambassadors.filter((a: any) => a.status === "REJECTED").length;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Pending: ${pending}   Approved: ${approved}   Rejected: ${rejected}`, 14, 36);
+
+      // Table
+      autoTable(doc, {
+        startY: 41,
+        head: [["#", "Full Name", "Email", "College / University", "Degree", "Year", "LinkedIn", "Status", "Applied On"]],
+        body: ambassadors.map((a: any, idx: number) => [
+          idx + 1,
+          a.fullName,
+          a.email,
+          a.collegeName,
+          a.degreeProgram || "—",
+          a.yearOfStudy || "—",
+          a.linkedin ? a.linkedin.replace("https://linkedin.com/in/", "@") : "—",
+          a.status,
+          new Date(a.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+        ]),
+        styles: {
+          font: "helvetica",
+          fontSize: 8,
+          cellPadding: 3,
+          textColor: [30, 41, 59],
+        },
+        headStyles: {
+          fillColor: [10, 15, 30],
+          textColor: [250, 204, 21],
+          fontStyle: "bold",
+          fontSize: 8,
+        },
+        alternateRowStyles: { fillColor: [241, 245, 249] },
+        columnStyles: {
+          0: { halign: "center", cellWidth: 8 },
+          6: { cellWidth: 28 },
+          7: { halign: "center", cellWidth: 20 },
+          8: { halign: "center", cellWidth: 24 },
+        },
+        didParseCell: (data: any) => {
+          if (data.section === "body" && data.column.index === 7) {
+            const status = data.cell.raw as string;
+            if (status === "APPROVED") data.cell.styles.textColor = [22, 163, 74];
+            else if (status === "REJECTED") data.cell.styles.textColor = [220, 38, 38];
+            else data.cell.styles.textColor = [100, 116, 139];
+            data.cell.styles.fontStyle = "bold";
+          }
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      // Footer
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        doc.setTextColor(148, 163, 184);
+        doc.text(`Healix BioLabs — Confidential  |  Page ${i} of ${pageCount}`, 14, 205);
+        doc.text("biomedical-network.vercel.app", 297 - 14, 205, { align: "right" });
+      }
+
+      doc.save(`HealixBioLabs_Ambassadors_${Date.now()}.pdf`);
+      triggerToast("PDF downloaded successfully!");
+    } catch (err: any) {
+      triggerToast("PDF generation failed: " + err.message, "error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // 6. Trigger profile incomplete reminder scan
   const handleTriggerReminders = async () => {
     setActionLoading("reminders");
     try {
@@ -319,6 +457,7 @@ export default function AdminDashboardClient({
     { label: "Publications", val: publications.length, icon: <FileText className="w-5 h-5 text-research-blue" /> },
     { label: "Projects", val: projectCount, icon: <FolderGit2 className="w-5 h-5 text-primary-yellow" /> },
     { label: "Fellowship Applications", val: fellowships.length, icon: <GraduationCap className="w-5 h-5 text-research-blue" /> },
+    { label: "Ambassador Applications", val: ambassadors.length, icon: <Flag className="w-5 h-5 text-emerald-400" /> },
   ];
 
   return (
@@ -365,7 +504,7 @@ export default function AdminDashboardClient({
       </div>
 
       {/* Numerical Metrics widgets */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         {metrics.map((m, idx) => (
           <div
             key={idx}
@@ -392,6 +531,7 @@ export default function AdminDashboardClient({
             { id: "researchers", label: "Verify Researchers", icon: <Users className="w-4 h-4" /> },
             { id: "publications", label: "Review Publications", icon: <FileText className="w-4 h-4" /> },
             { id: "fellowships", label: "Fellowship Applications", icon: <GraduationCap className="w-4 h-4" /> },
+            { id: "ambassadors", label: "Ambassador Applications", icon: <Flag className="w-4 h-4" /> },
             { id: "emails", label: "Email Audit Log", icon: <Mail className="w-4 h-4" /> },
             { id: "video", label: "Video Section", icon: <Video className="w-4 h-4" /> },
             { id: "chapters", label: "Chapter Photos", icon: <Building className="w-4 h-4" /> },
@@ -664,6 +804,133 @@ export default function AdminDashboardClient({
                   {fellowships.length === 0 && (
                     <div className="py-12 text-center text-slate-500">
                       No student applications submitted yet.
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === "ambassadors" && (
+              /* TAB: AMBASSADOR APPLICATIONS */
+              <motion.div
+                key="ambassadors"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-4"
+              >
+                {/* Header with PDF download button */}
+                <div className="border-b border-slate-800 pb-3 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-bold font-heading text-research-blue">Campus Ambassador Applications</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      All brand ambassador registrations — approve, reject, and export as PDF.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleDownloadAmbassadorsPDF}
+                    disabled={actionLoading === "pdf" || ambassadors.length === 0}
+                    className="flex items-center space-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm shrink-0"
+                  >
+                    {actionLoading === "pdf" ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    <span>{actionLoading === "pdf" ? "Generating..." : `Download PDF (${ambassadors.length})`}</span>
+                  </button>
+                </div>
+
+                {/* Stats strip */}
+                <div className="flex flex-wrap gap-3 mb-2">
+                  {[
+                    { label: "Total", val: ambassadors.length, color: "text-slate-300" },
+                    { label: "Pending", val: ambassadors.filter((a: any) => a.status === "PENDING").length, color: "text-amber-400" },
+                    { label: "Approved", val: ambassadors.filter((a: any) => a.status === "APPROVED").length, color: "text-emerald-400" },
+                    { label: "Rejected", val: ambassadors.filter((a: any) => a.status === "REJECTED").length, color: "text-rose-400" },
+                  ].map((s) => (
+                    <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 flex items-center space-x-2">
+                      <span className={`text-sm font-extrabold font-heading ${s.color}`}>{s.val}</span>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Applications list */}
+                <div className="space-y-3">
+                  {ambassadors.map((app: any) => (
+                    <div
+                      key={app.id}
+                      className="bg-[#0B0F19]/60 border border-slate-800 rounded-2xl p-4 space-y-3 text-xs shadow-xs"
+                    >
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-3">
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                            <h4 className="font-bold text-slate-100 text-sm">{app.fullName}</h4>
+                            <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase border ${
+                              app.status === "APPROVED" ? "bg-emerald-950/20 text-emerald-400 border-emerald-900/30" :
+                              app.status === "REJECTED" ? "bg-rose-950/20 text-rose-400 border-rose-900/30" :
+                              "bg-amber-950/20 text-amber-400 border-amber-900/30"
+                            }`}>{app.status}</span>
+                          </div>
+                          <p className="text-slate-400 font-semibold truncate">{app.email}</p>
+                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-slate-500">
+                            <span>🏫 {app.collegeName}</span>
+                            {app.degreeProgram && <span>🎓 {app.degreeProgram}</span>}
+                            {app.yearOfStudy && <span>📅 {app.yearOfStudy}</span>}
+                          </div>
+                          {app.linkedin && (
+                            <a
+                              href={app.linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-accent-blue hover:underline flex items-center space-x-1 text-[10px] font-semibold"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              <span>LinkedIn Profile</span>
+                            </a>
+                          )}
+                          <p className="text-[9px] text-slate-600 font-mono">
+                            Applied: {new Date(app.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+
+                        {/* Action buttons */}
+                        {app.status === "PENDING" && (
+                          <div className="flex space-x-2 shrink-0">
+                            <button
+                              disabled={actionLoading === app.id}
+                              onClick={() => handleResolveAmbassador(app.id, "APPROVED")}
+                              className="flex items-center space-x-1 px-3 py-1.5 bg-emerald-950/30 hover:bg-emerald-900/40 border border-emerald-800 rounded-lg text-emerald-400 text-[10px] font-bold cursor-pointer transition-all"
+                            >
+                              <Check className="w-3 h-3" />
+                              <span>Approve</span>
+                            </button>
+                            <button
+                              disabled={actionLoading === app.id}
+                              onClick={() => handleResolveAmbassador(app.id, "REJECTED")}
+                              className="flex items-center space-x-1 px-3 py-1.5 bg-rose-950/30 hover:bg-rose-900/40 border border-rose-800 rounded-lg text-rose-400 text-[10px] font-bold cursor-pointer transition-all"
+                            >
+                              <X className="w-3 h-3" />
+                              <span>Reject</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Motivation / SOP */}
+                      <div className="bg-slate-950/60 rounded-xl border border-slate-800 p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Why they want to lead a chapter</p>
+                        <p className="text-slate-300 leading-relaxed text-[11px] line-clamp-4">{app.sop}</p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {ambassadors.length === 0 && (
+                    <div className="py-16 text-center">
+                      <Flag className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+                      <p className="text-slate-500 text-sm">No ambassador applications yet.</p>
+                      <p className="text-slate-600 text-xs mt-1">Applications submitted via the Chapters page will appear here.</p>
                     </div>
                   )}
                 </div>

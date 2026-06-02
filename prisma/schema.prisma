@@ -169,3 +169,19 @@ model Certificate {
 
   @@map("certificates")
 }
+
+model AmbassadorApplication {
+  id            String   @id @default(uuid())
+  fullName      String
+  email         String
+  collegeName   String
+  degreeProgram String?
+  yearOfStudy   String?
+  linkedin      String?
+  sop           String   // Statement of purpose / motivation
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("ambassador_applications")
+}

@@ -22,7 +22,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Dispatch Ambassador application email
+    // 1. Save application to database
+    const application = await prisma.ambassadorApplication.create({
+      data: {
+        fullName: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        collegeName: collegeName.trim(),
+        degreeProgram: degreeProgram?.trim() || null,
+        yearOfStudy: yearOfStudy || null,
+        linkedin: linkedin?.trim() || null,
+        sop: sop.trim(),
+        status: "PENDING",
+      },
+    });
+
+    // 2. Dispatch Ambassador application email to applicant
     await sendAmbassadorApplicationEmail(
       email,
       fullName,
@@ -33,7 +47,7 @@ export async function POST(request: Request) {
       sop
     );
 
-    // 2. Notify all Admins in database
+    // 3. Notify all Admins in database
     try {
       const admins = await prisma.user.findMany({
         where: { role: "ADMIN" },
@@ -44,7 +58,7 @@ export async function POST(request: Request) {
           data: {
             userId: admin.id,
             title: "New Ambassador Application",
-            message: `${fullName} has applied to be a campus ambassador for ${collegeName}.`,
+            message: `${fullName} from ${collegeName} has applied to be a campus ambassador.`,
           },
         });
       }
@@ -52,7 +66,7 @@ export async function POST(request: Request) {
       console.error("Failed to create admin notification for ambassador application:", dbErr);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, id: application.id });
   } catch (err: any) {
     console.error("Ambassador application API error:", err);
     return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });

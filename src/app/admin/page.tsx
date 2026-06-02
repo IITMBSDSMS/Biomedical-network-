@@ -58,6 +58,11 @@ export default async function AdminPage() {
 
   const projectCount = await prisma.project.count();
 
+  // Fetch ambassador applications
+  const ambassadorApplications = await prisma.ambassadorApplication.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+
   // Fetch recent email logs for demonstration in the sandbox
   const emailLogs = await prisma.emailLog.findMany({
     orderBy: { sentAt: "desc" },
@@ -76,6 +81,7 @@ export default async function AdminPage() {
           initialPublications={publications}
           initialFellowshipApplications={fellowshipApplications}
           initialEmailLogs={emailLogs}
+          initialAmbassadorApplications={ambassadorApplications}
           projectCount={projectCount}
         />
       </main>
