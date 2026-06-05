@@ -20,7 +20,7 @@ export default function Footer() {
     company: [
       { name: "About Us", href: "/about" },
       { name: "Contact Support", href: "/contact" },
-      { name: "Healix Technologies Parent", href: "https://healix.com" },
+      { name: "Healix Technologies (Parent Co.)", href: "https://healix-technologies.com", external: true },
     ],
     indexing: [
       { name: "Google Scholar Index", href: "/indexing/google-scholar" },
@@ -90,11 +90,25 @@ export default function Footer() {
               Organization
             </h4>
             <ul className="space-y-2.5">
-              {links.company.map((link) => (
+              {links.company.map((link: any) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="text-xs text-slate-400 hover:text-white transition-colors font-medium">
-                    {link.name}
-                  </Link>
+                  {link.external ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-slate-400 hover:text-primary-yellow transition-colors font-medium flex items-center space-x-1 group"
+                    >
+                      <span>{link.name}</span>
+                      <svg className="w-2.5 h-2.5 opacity-50 group-hover:opacity-100 transition-opacity" viewBox="0 0 12 12" fill="none">
+                        <path d="M2.5 9.5L9.5 2.5M9.5 2.5H4.5M9.5 2.5V7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </a>
+                  ) : (
+                    <Link href={link.href} className="text-xs text-slate-400 hover:text-white transition-colors font-medium">
+                      {link.name}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -120,7 +134,9 @@ export default function Footer() {
 
         {/* Bottom Credits */}
         <div className="flex flex-col sm:flex-row items-center justify-between pt-8 text-[11px] text-slate-500">
-          <p>© {currentYear} Healix Technologies Pvt. Ltd. All rights reserved.</p>
+          <p>© {currentYear} Healix Technologies Pvt. Ltd. All rights reserved. A subsidiary of{" "}
+            <a href="https://healix-technologies.com" target="_blank" rel="noopener noreferrer" className="text-primary-yellow hover:underline font-semibold">Healix Technologies</a>.
+          </p>
           <div className="flex space-x-6 mt-4 sm:mt-0">
             <a href="#" className="hover:text-slate-300 transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-slate-300 transition-colors">Terms of Service</a>
