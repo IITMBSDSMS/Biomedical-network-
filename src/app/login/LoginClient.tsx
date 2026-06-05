@@ -256,70 +256,32 @@ export default function LoginClient() {
     setLoading(true);
     setError("");
 
-    if (isSupabaseConfigured) {
-      const defaultPassword = "HealixBioLabs2026!";
-      try {
-        // 1. Try to sign in
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    try {
+      // Use the admin signup endpoint — handles both new and existing users,
+      // auto-confirms emails, and syncs to local DB
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           email,
-          password: defaultPassword,
-        });
+          password: "HealixBioLabs2026!",
+          name,
+          role,
+        }),
+      });
 
-        if (signInError) {
-          // 2. If user not found, auto register them
-          if (signInError.message.includes("Invalid login credentials")) {
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-              email,
-              password: defaultPassword,
-              options: {
-                data: {
-                  full_name: name,
-                }
-              }
-            });
+      const data = await res.json();
 
-            if (signUpError) {
-              throw signUpError;
-            }
-
-            // Sync with local database
-            const res = await fetch("/api/auth/register", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email, name, role }),
-            });
-            const resData = await res.json();
-            if (resData.error) throw new Error(resData.error);
-
-            // Sign in again to get session
-            const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
-              email,
-              password: defaultPassword,
-            });
-
-            if (retryError) throw retryError;
-
-            if (retryData.session) {
-              handleLoginSuccess(email, retryData.session.access_token);
-              return;
-            }
-          } else {
-            throw signInError;
-          }
-        }
-
-        if (signInData.session) {
-          handleLoginSuccess(email, signInData.session.access_token);
-        }
-      } catch (err: any) {
-        console.error("Supabase bypass auth failed, falling back to mock:", err);
-        handleLoginSuccess(email); // Fallback to mock session
-      } finally {
-        setLoading(false);
+      if (data.accessToken) {
+        handleLoginSuccess(email, data.accessToken);
+      } else {
+        // Fallback to mock session
+        handleLoginSuccess(email);
       }
-    } else {
-      // Direct mock session fallback
-      handleLoginSuccess(email);
+    } catch (err: any) {
+      console.error("Bypass login failed:", err);
+      handleLoginSuccess(email); // Always succeed for sandbox accounts
+    } finally {
       setLoading(false);
     }
   };
@@ -341,10 +303,11 @@ export default function LoginClient() {
         });
 
         if (authError) {
-          // If email is not confirmed (Supabase default), use server-side admin to auto-confirm
-          if (authError.message.toLowerCase().includes("email not confirmed") ||
-              authError.message.toLowerCase().includes("not confirmed")) {
-            // Call server-side admin signup to auto-confirm the user's email
+          // If email is not confirmed, use server-side admin to auto-confirm then retry
+          if (
+            authError.message.toLowerCase().includes("email not confirmed") ||
+            authError.message.toLowerCase().includes("not confirmed")
+          ) {
             const adminRes = await fetch("/api/auth/signup", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -358,29 +321,41 @@ export default function LoginClient() {
             const adminData = await adminRes.json();
 
             if (adminData.accessToken) {
-              // Successfully auto-confirmed — log in with new token
               handleLoginSuccess(emailInput.trim(), adminData.accessToken);
               return;
-            } else if (adminData.requiresConfirmation) {
-              // Service role not configured — use mock session as fallback
+            } else if (adminData.success) {
+              // Confirmed but no token yet — fall back to mock session
               handleLoginSuccess(emailInput.trim());
-              return;
-            } else {
-              setError("Your email could not be confirmed. Please register again.");
-              setLoading(false);
               return;
             }
           }
-          setError(authError.message);
+
+          // Invalid credentials or other error
+          if (authError.message.toLowerCase().includes("invalid login credentials")) {
+            setError("Incorrect email or password. Please check your credentials.");
+          } else {
+            setError(authError.message);
+          }
           setLoading(false);
           return;
         }
 
         if (data.session) {
+          // Sync user to local DB (non-blocking — ensures profile exists)
+          fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: emailInput.trim(),
+              name: data.session.user?.user_metadata?.full_name || emailInput.trim().split("@")[0],
+              role: "RESEARCHER",
+            }),
+          }).catch(() => {}); // Non-blocking — don't await
+
           handleLoginSuccess(emailInput.trim(), data.session.access_token);
         }
       } else {
-        // Supabase is not configured, emulate successful email login via mock session
+        // Supabase not configured — mock session
         handleLoginSuccess(emailInput.trim().toLowerCase());
       }
     } catch (err: any) {

@@ -13,22 +13,98 @@ export interface HealixUser {
   researcherSlug?: string;
 }
 
+/**
+ * Auto-creates a user + researcher profile in local DB from a Supabase user object.
+ * Called when Supabase auth is valid but local DB record is missing.
+ */
+async function autoProvisionLocalUser(email: string, name: string, photoUrl?: string) {
+  try {
+    let user = await prisma.user.findUnique({
+      where: { email },
+      include: { researcher: true },
+    });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          name: name || email.split("@")[0],
+          role: "RESEARCHER",
+          photoUrl: photoUrl || null,
+        },
+        include: { researcher: true },
+      });
+    }
+
+    // Auto-create researcher profile if missing
+    if (user.role === "RESEARCHER" && !user.researcher) {
+      const count = await prisma.researcher.count();
+      const nextNum = String(count + 1).padStart(4, "0");
+      const safeName = (name || email.split("@")[0]).trim();
+      const baseSlug = safeName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const slug = `${baseSlug}-${nextNum}`;
+
+      const researcher = await prisma.researcher.create({
+        data: {
+          userId: user.id,
+          researchId: `HX-RES-2026-${nextNum}`,
+          fullName: safeName,
+          photoUrl: photoUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(safeName)}`,
+          bio: "Biomedical researcher on the Healix BioLabs network.",
+          researchInterests: JSON.stringify([]),
+          skills: JSON.stringify([]),
+          slug,
+          isVerified: false,
+        },
+      });
+
+      // Attach to user object
+      (user as any).researcher = researcher;
+
+      // Send welcome email for new provisions
+      try {
+        await sendWelcomeEmail(email, safeName, researcher.researchId, slug);
+      } catch (mailErr) {
+        console.error("Welcome email failed during auto-provision:", mailErr);
+      }
+    }
+
+    return user;
+  } catch (err) {
+    console.error("autoProvisionLocalUser failed:", err);
+    return null;
+  }
+}
+
 export async function getCurrentUser(): Promise<HealixUser | null> {
   const cookieStore = await cookies();
 
-  // 1. Supabase Authentication (If configured)
+  // ──────────────────────────────────────────────────────────────
+  // 1. Supabase Token Authentication
+  // ──────────────────────────────────────────────────────────────
   if (isSupabaseConfigured) {
     try {
       const token = cookieStore.get("healix_supabase_token")?.value;
       if (token) {
         const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
-        if (supabaseUser && supabaseUser.email) {
+        if (supabaseUser && supabaseUser.email && !error) {
           const email = supabaseUser.email;
-          
-          const dbUser = await prisma.user.findUnique({
+          const name =
+            supabaseUser.user_metadata?.full_name ||
+            supabaseUser.user_metadata?.name ||
+            email.split("@")[0];
+          const photoUrl = supabaseUser.user_metadata?.avatar_url || null;
+
+          // Find user in local DB — auto-create if missing (e.g. registered via OAuth)
+          let dbUser = await prisma.user.findUnique({
             where: { email },
             include: { researcher: true },
           });
+
+          if (!dbUser) {
+            // User authenticated with Supabase but not in local DB — auto-provision
+            dbUser = await autoProvisionLocalUser(email, name, photoUrl) as any;
+          }
 
           if (dbUser) {
             return {
@@ -37,8 +113,8 @@ export async function getCurrentUser(): Promise<HealixUser | null> {
               name: dbUser.name,
               role: dbUser.role,
               photoUrl: dbUser.photoUrl,
-              researcherId: dbUser.researcher?.id,
-              researcherSlug: dbUser.researcher?.slug || undefined,
+              researcherId: (dbUser as any).researcher?.id,
+              researcherSlug: (dbUser as any).researcher?.slug || undefined,
             };
           }
         }
@@ -48,9 +124,14 @@ export async function getCurrentUser(): Promise<HealixUser | null> {
     }
   }
 
-  // 2. Clerk Authentication (If configured)
+  // ──────────────────────────────────────────────────────────────
+  // 2. Clerk Authentication (Legacy)
+  // ──────────────────────────────────────────────────────────────
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const isClerkEnabled = publishableKey && publishableKey !== "pk_test_placeholder" && publishableKey.startsWith("pk_");
+  const isClerkEnabled =
+    publishableKey &&
+    publishableKey !== "pk_test_placeholder" &&
+    publishableKey.startsWith("pk_");
 
   if (isClerkEnabled) {
     try {
@@ -69,13 +150,12 @@ export async function getCurrentUser(): Promise<HealixUser | null> {
               data: {
                 email,
                 name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "User",
-                role: "RESEARCHER", // Default role
+                role: "RESEARCHER",
                 photoUrl: clerkUser.imageUrl,
               },
               include: { researcher: true },
             });
 
-            // Send Welcome Email for new Clerk signups
             try {
               await sendWelcomeEmail(email, dbUser.name || email);
             } catch (mailErr) {
@@ -83,15 +163,14 @@ export async function getCurrentUser(): Promise<HealixUser | null> {
             }
           }
 
-
           return {
             id: dbUser.id,
             email: dbUser.email,
             name: dbUser.name,
             role: dbUser.role,
             photoUrl: dbUser.photoUrl,
-            researcherId: dbUser.researcher?.id,
-            researcherSlug: dbUser.researcher?.slug || undefined,
+            researcherId: (dbUser as any).researcher?.id,
+            researcherSlug: (dbUser as any).researcher?.slug || undefined,
           };
         }
       }
@@ -100,15 +179,23 @@ export async function getCurrentUser(): Promise<HealixUser | null> {
     }
   }
 
-  // 3. Fallback to Developer Mock Cookie Sandbox when Clerk/Supabase is not configured
+  // ──────────────────────────────────────────────────────────────
+  // 3. Mock Cookie Session (Sandbox / Fallback)
+  // ──────────────────────────────────────────────────────────────
   try {
     const mockEmail = cookieStore.get("healix_mock_user_email")?.value;
 
     if (mockEmail) {
-      const dbUser = await prisma.user.findUnique({
+      // Try to find in local DB first
+      let dbUser = await prisma.user.findUnique({
         where: { email: mockEmail },
         include: { researcher: true },
       });
+
+      if (!dbUser) {
+        // Auto-provision — user registered but DB may have been unavailable
+        dbUser = await autoProvisionLocalUser(mockEmail, mockEmail.split("@")[0]) as any;
+      }
 
       if (dbUser) {
         return {
@@ -117,8 +204,8 @@ export async function getCurrentUser(): Promise<HealixUser | null> {
           name: dbUser.name,
           role: dbUser.role,
           photoUrl: dbUser.photoUrl,
-          researcherId: dbUser.researcher?.id,
-          researcherSlug: dbUser.researcher?.slug || undefined,
+          researcherId: (dbUser as any).researcher?.id,
+          researcherSlug: (dbUser as any).researcher?.slug || undefined,
         };
       }
     }
@@ -128,4 +215,3 @@ export async function getCurrentUser(): Promise<HealixUser | null> {
 
   return null;
 }
-

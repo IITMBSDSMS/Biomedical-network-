@@ -17,91 +17,107 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
     let supabaseUserId: string | null = null;
     let accessToken: string | null = null;
 
     if (isSupabaseAdminConfigured) {
       // ========== APPROACH 1: Admin API — Create pre-confirmed user ==========
-      // Check if user already exists
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const existingUser = existingUsers?.users?.find(u => u.email === email.trim());
+      // Try creating the user directly (most users will be new)
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: cleanEmail,
+        password,
+        email_confirm: true, // Pre-confirm — our OTP already verified the email
+        user_metadata: { full_name: name.trim() },
+      });
 
-      if (existingUser) {
-        // User exists but may be unconfirmed — confirm them and update password if needed
-        const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-          existingUser.id,
-          { email_confirm: true }
-        );
-        if (updateError) {
-          console.error("Failed to confirm existing user:", updateError);
-        } else {
-          supabaseUserId = updatedUser.user?.id || null;
-        }
-      } else {
-        // Create a new confirmed user via admin
-        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-          email: email.trim(),
-          password,
-          email_confirm: true, // Pre-confirm since our OTP already verified the email
-          user_metadata: { full_name: name.trim() },
-        });
+      if (!createError && newUser?.user) {
+        supabaseUserId = newUser.user.id;
+      } else if (createError) {
+        // User already exists — find them and auto-confirm
+        console.log("createUser error (likely duplicate):", createError.message);
 
-        if (createError) {
-          console.error("Admin createUser failed:", createError);
-          // Fall through to regular signup below
-        } else {
-          supabaseUserId = newUser.user?.id || null;
+        // Page through users to find by email
+        let found = false;
+        let page = 1;
+        while (!found) {
+          const { data: pageData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+            page,
+            perPage: 50,
+          });
+
+          if (listError || !pageData?.users?.length) break;
+
+          const match = pageData.users.find((u: any) => u.email === cleanEmail);
+          if (match) {
+            // Found — auto-confirm and update password
+            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(match.id, {
+              email_confirm: true,
+              password,
+            });
+            if (!updateError) {
+              supabaseUserId = match.id;
+            }
+            found = true;
+          }
+
+          if (pageData.users.length < 50) break; // Last page reached
+          page++;
         }
       }
 
-      // Now sign in to get session token
+      // Sign in to get session token
       if (supabaseUserId) {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: cleanEmail,
           password,
         });
 
         if (!signInError && signInData?.session) {
           accessToken = signInData.session.access_token;
+        } else {
+          console.error("Sign-in after admin create failed:", signInError?.message);
         }
       }
     } else if (isSupabaseConfigured) {
-      // ========== APPROACH 2: Standard signUp (may require email confirmation) ==========
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
+      // ========== APPROACH 2: Standard signUp (fallback without service role) ==========
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: cleanEmail,
         password,
         options: { data: { full_name: name.trim() } },
       });
 
-      if (signUpError && !signUpError.message.includes("User already registered")) {
+      if (signUpError && !signUpError.message.toLowerCase().includes("already")) {
         return NextResponse.json({ error: signUpError.message }, { status: 400 });
       }
 
-      // Try immediate sign-in (works if email confirmation is disabled)
+      // Try immediate sign-in
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: cleanEmail,
         password,
       });
 
       if (!signInError && signInData?.session) {
         accessToken = signInData.session.access_token;
-      } else if (signInError?.message?.includes("Email not confirmed")) {
-        // Return success without session — client will use mock session fallback
-        return NextResponse.json({ success: true, requiresConfirmation: true, email });
+      } else if (signInError?.message?.toLowerCase().includes("not confirmed")) {
+        return NextResponse.json({ success: true, requiresConfirmation: true, email: cleanEmail });
       }
     }
 
-    // ========== Sync user to our Prisma database ==========
+    // ========== Sync user to Prisma DB ==========
     let dbUser: any = null;
     let isNewUser = false;
     try {
-      dbUser = await prisma.user.findUnique({ where: { email }, include: { researcher: true } });
+      dbUser = await prisma.user.findUnique({
+        where: { email: cleanEmail },
+        include: { researcher: true },
+      });
       isNewUser = !dbUser;
 
       if (!dbUser) {
         dbUser = await prisma.user.create({
           data: {
-            email,
+            email: cleanEmail,
             name: name.trim(),
             role: (role || "RESEARCHER").toUpperCase(),
           },
@@ -134,10 +150,15 @@ export async function POST(req: NextRequest) {
       console.error("Database sync error (non-fatal):", dbError);
     }
 
-    // Send welcome email for new users
+    // Send welcome email for new users only
     if (isNewUser && dbUser) {
       try {
-        await sendWelcomeEmail(email, name, dbUser.researcher?.researchId, dbUser.researcher?.slug);
+        await sendWelcomeEmail(
+          cleanEmail,
+          name,
+          dbUser.researcher?.researchId,
+          dbUser.researcher?.slug
+        );
       } catch (mailErr) {
         console.error("Welcome email failed (non-fatal):", mailErr);
       }
@@ -146,15 +167,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       accessToken,
-      email,
-      user: dbUser ? {
-        id: dbUser.id,
-        email: dbUser.email,
-        name: dbUser.name,
-        role: dbUser.role,
-        researcherId: dbUser.researcher?.id,
-        researcherSlug: dbUser.researcher?.slug,
-      } : null,
+      email: cleanEmail,
+      user: dbUser
+        ? {
+            id: dbUser.id,
+            email: dbUser.email,
+            name: dbUser.name,
+            role: dbUser.role,
+            researcherId: dbUser.researcher?.id,
+            researcherSlug: dbUser.researcher?.slug,
+          }
+        : null,
     });
   } catch (error: any) {
     console.error("Server-side signup error:", error);
