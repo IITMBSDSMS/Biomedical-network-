@@ -148,9 +148,9 @@ export default function Footer() {
             <a href="https://healix-technologies.com" target="_blank" rel="noopener noreferrer" className="text-primary-yellow hover:underline font-semibold">Healix Technologies</a>.
           </p>
           <div className="flex space-x-6 mt-4 sm:mt-0">
-            <a href="#" className="hover:text-slate-300 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-slate-300 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-slate-300 transition-colors font-medium">Contact Relations</a>
+            <Link href="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
+            <Link href="/contact" className="hover:text-slate-300 transition-colors font-medium">Contact Relations</Link>
           </div>
         </div>
 
