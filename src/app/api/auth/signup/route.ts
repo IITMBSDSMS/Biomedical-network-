@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         email: cleanEmail,
         password,
         email_confirm: true, // Pre-confirm — our OTP already verified the email
-        user_metadata: { full_name: name.trim() },
+        user_metadata: { full_name: name.trim(), role: (role || "RESEARCHER").toUpperCase() },
       });
 
       if (!createError && newUser?.user) {
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       const { error: signUpError } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
-        options: { data: { full_name: name.trim() } },
+        options: { data: { full_name: name.trim(), role: (role || "RESEARCHER").toUpperCase() } },
       });
 
       if (signUpError && !signUpError.message.toLowerCase().includes("already")) {

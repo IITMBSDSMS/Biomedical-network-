@@ -96,14 +96,19 @@ export async function getCurrentUser(): Promise<HealixUser | null> {
           const photoUrl = supabaseUser.user_metadata?.avatar_url || null;
 
           // Find user in local DB — auto-create if missing (e.g. registered via OAuth)
-          let dbUser = await prisma.user.findUnique({
-            where: { email },
-            include: { researcher: true },
-          });
+          let dbUser = null;
+          try {
+            dbUser = await prisma.user.findUnique({
+              where: { email },
+              include: { researcher: true },
+            });
 
-          if (!dbUser) {
-            // User authenticated with Supabase but not in local DB — auto-provision
-            dbUser = await autoProvisionLocalUser(email, name, photoUrl) as any;
+            if (!dbUser) {
+              // User authenticated with Supabase but not in local DB — auto-provision
+              dbUser = await autoProvisionLocalUser(email, name, photoUrl) as any;
+            }
+          } catch (dbError) {
+            console.error("Database connection failed in session resolver, using fallback profile:", dbError);
           }
 
           if (dbUser) {
@@ -115,6 +120,24 @@ export async function getCurrentUser(): Promise<HealixUser | null> {
               photoUrl: dbUser.photoUrl,
               researcherId: (dbUser as any).researcher?.id,
               researcherSlug: (dbUser as any).researcher?.slug || undefined,
+            };
+          } else {
+            // Fallback user profile when DB is offline or sync fails
+            const slugName = (name || email.split("@")[0])
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/(^-|-$)/g, "");
+            
+            const fallbackRole = supabaseUser.user_metadata?.role || (email === "admin@healix.com" ? "ADMIN" : "RESEARCHER");
+
+            return {
+              id: "fallback-uid-" + supabaseUser.id,
+              email: email,
+              name: name,
+              role: fallbackRole.toUpperCase(),
+              photoUrl: photoUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(name || email)}`,
+              researcherId: "HX-RES-2026-FALLBACK",
+              researcherSlug: `${slugName}-fallback`,
             };
           }
         }

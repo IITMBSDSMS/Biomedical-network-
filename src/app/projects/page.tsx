@@ -33,6 +33,26 @@ export default async function ProjectsPage() {
       console.warn("Database offline, using null researcher fallback:", err);
     }
 
+    if (!researcher) {
+      const slugName = (currentUser.name || currentUser.email.split("@")[0])
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+      researcher = {
+        id: "fallback-res-" + currentUser.id,
+        userId: currentUser.id,
+        researchId: currentUser.researcherId || `HX-${currentUser.role.substring(0, 3).toUpperCase()}-2026-FALLBACK`,
+        fullName: currentUser.name || "User",
+        photoUrl: currentUser.photoUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(currentUser.name || "user")}`,
+        bio: `${currentUser.role.charAt(0) + currentUser.role.slice(1).toLowerCase()} member of the Healix BioLabs network.`,
+        researchInterests: "[]",
+        skills: "[]",
+        slug: currentUser.researcherSlug || `${slugName}-fallback`,
+        isVerified: false,
+      };
+    }
+
     if (researcher) {
       // Find projects where researcher is a member
       try {
