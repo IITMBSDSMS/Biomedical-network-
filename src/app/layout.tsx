@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
 import HealixSplash from "@/components/ui/HealixSplash";
+import AuthSync from "@/components/auth/AuthSync";
 
 const displayFont = { variable: "font-heading" };
 const bodyFont = { variable: "font-sans" };
@@ -185,13 +185,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const isClerkEnabled =
-    publishableKey &&
-    publishableKey !== "pk_test_placeholder" &&
-    publishableKey.startsWith("pk_");
-
-  const appLayout = (
+  return (
     <html
       lang="en"
       className={`${displayFont.variable} ${bodyFont.variable} h-full antialiased`}
@@ -215,16 +209,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
         {/* Global session splash preloader — shown once per browser session */}
         <HealixSplash />
+        {/* Client-to-server token synchronization listener */}
+        <AuthSync />
         {children}
       </body>
     </html>
   );
-
-  if (isClerkEnabled) {
-    return (
-      <ClerkProvider publishableKey={publishableKey}>{appLayout}</ClerkProvider>
-    );
-  }
-
-  return appLayout;
 }

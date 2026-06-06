@@ -78,7 +78,10 @@ export default function Navbar({ currentUser }: NavbarProps) {
 
   const handleLogout = async () => {
     try {
-      // Clear session cookies
+      // Clear session cookies server-side
+      await fetch("/api/auth/logout", { method: "POST" });
+
+      // Clear session cookies client-side
       document.cookie = "healix_supabase_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
       document.cookie = "healix_mock_user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
       

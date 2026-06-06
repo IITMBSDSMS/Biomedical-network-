@@ -34,7 +34,7 @@ export default function AdminDashboardClient({
   const router = useRouter();
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<"researchers" | "publications" | "fellowships" | "emails" | "video" | "chapters" | "ambassadors">("researchers");
+  const [activeTab, setActiveTab] = useState<"researchers" | "publications" | "fellowships" | "emails" | "video" | "chapters" | "ambassadors" | "users">("researchers");
   
   // Data lists (in local state so toggle actions react immediately)
   const [researchers, setResearchers] = useState(initialResearchers);
@@ -42,6 +42,11 @@ export default function AdminDashboardClient({
   const [fellowships, setFellowships] = useState(initialFellowshipApplications);
   const [emailLogs, setEmailLogs] = useState(initialEmailLogs);
   const [ambassadors, setAmbassadors] = useState(initialAmbassadorApplications);
+
+  // User Management State
+  const [users, setUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
   
   // States
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -94,6 +99,54 @@ export default function AdminDashboardClient({
       })
       .catch(console.error);
   }, []);
+
+  // Fetch users list when User Roles tab is selected
+  useEffect(() => {
+    if (activeTab === "users") {
+      setUsersLoading(true);
+      fetch("/api/admin/users")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.users) {
+            setUsers(data.users);
+          } else if (data.error) {
+            triggerToast(data.error, "error");
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to load users:", err);
+          triggerToast("Failed to load user list", "error");
+        })
+        .finally(() => {
+          setUsersLoading(false);
+        });
+    }
+  }, [activeTab]);
+
+  const handleUpdateRole = async (userId: string, newRole: string) => {
+    try {
+      setActionLoading(`role-${userId}`);
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, role: newRole }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+        );
+        triggerToast("User role updated successfully", "success");
+      } else {
+        triggerToast(data.error || "Failed to update role", "error");
+      }
+    } catch (err) {
+      console.error("Update role failed:", err);
+      triggerToast("An error occurred while updating the role", "error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   // Handle video cover file selection
   const handleVideoCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -535,6 +588,7 @@ export default function AdminDashboardClient({
             { id: "emails", label: "Email Audit Log", icon: <Mail className="w-4 h-4" /> },
             { id: "video", label: "Video Section", icon: <Video className="w-4 h-4" /> },
             { id: "chapters", label: "Chapter Photos", icon: <Building className="w-4 h-4" /> },
+            { id: "users", label: "User Roles", icon: <Users className="w-4 h-4" /> },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1258,6 +1312,138 @@ export default function AdminDashboardClient({
                     );
                   })}
                 </div>
+              </motion.div>
+            )}
+
+            {/* ======================================================== */}
+            {/* TAB: USER ROLES MANAGEMENT */}
+            {/* ======================================================== */}
+            {activeTab === "users" && (
+              <motion.div
+                key="users"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                <div className="border-b border-slate-800 pb-3 mb-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-bold font-heading text-research-blue">User Account & Role Controls</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">List all registered users, inspect credentials, and manage roles dynamically.</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setUsersLoading(true);
+                      fetch("/api/admin/users")
+                        .then((res) => res.json())
+                        .then((data) => {
+                          if (data.users) setUsers(data.users);
+                        })
+                        .catch(console.error)
+                        .finally(() => setUsersLoading(false));
+                    }}
+                    disabled={usersLoading}
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 border border-slate-700 hover:border-slate-600 text-[10px] font-bold text-slate-300 hover:text-white rounded-lg transition-all cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${usersLoading ? "animate-spin" : ""}`} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+                {/* Search box */}
+                <div className="flex gap-4">
+                  <input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={userSearchQuery}
+                    onChange={(e) => setUserSearchQuery(e.target.value)}
+                    className="flex-1 bg-slate-950/60 border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl py-2.5 px-4 text-xs font-medium focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue transition-all"
+                  />
+                </div>
+
+                {/* Table list */}
+                {usersLoading ? (
+                  <div className="py-20 flex flex-col items-center justify-center text-slate-500 space-y-2">
+                    <Loader2 className="w-8 h-8 animate-spin text-accent-blue" />
+                    <span className="text-xs font-semibold uppercase tracking-wider">Retrieving User Directory...</span>
+                  </div>
+                ) : (
+                  <div className="bg-slate-950/45 border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-800/60 bg-slate-900/40 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                            <th className="py-3.5 px-4 font-extrabold">Name / Email</th>
+                            <th className="py-3.5 px-4 font-extrabold">Joined Date</th>
+                            <th className="py-3.5 px-4 font-extrabold">Current Role</th>
+                            <th className="py-3.5 px-4 font-extrabold text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/40 text-slate-350">
+                          {users
+                            .filter((u) => {
+                              const q = userSearchQuery.toLowerCase();
+                              return (u.name || "").toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+                            })
+                            .map((user) => {
+                              const isPendingAction = actionLoading === `role-${user.id}`;
+                              return (
+                                <tr key={user.id} className="hover:bg-slate-900/10 transition-colors">
+                                  <td className="py-3 px-4">
+                                    <p className="text-xs font-bold text-slate-200">{user.name || "Unnamed User"}</p>
+                                    <p className="text-[10px] text-slate-500 font-medium">{user.email}</p>
+                                  </td>
+                                  <td className="py-3 px-4 text-[10.5px] text-slate-400 font-medium">
+                                    {new Date(user.createdAt).toLocaleDateString("en-IN", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <span className={`inline-block text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md border ${
+                                      user.role === "ADMIN"
+                                        ? "bg-red-950/20 text-rose-400 border-red-900/35"
+                                        : user.role === "RESEARCHER"
+                                          ? "bg-blue-950/20 text-accent-blue border-blue-900/35"
+                                          : user.role === "STUDENT"
+                                            ? "bg-amber-950/20 text-amber-400 border-amber-900/35"
+                                            : "bg-purple-950/20 text-purple-400 border-purple-900/35"
+                                    }`}>
+                                      {user.role}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-4 text-right">
+                                    <select
+                                      value={user.role}
+                                      disabled={isPendingAction}
+                                      onChange={(e) => handleUpdateRole(user.id, e.target.value)}
+                                      className="bg-slate-900 border border-slate-800 text-[10px] text-slate-300 font-bold rounded-lg py-1.5 px-2.5 focus:outline-none focus:border-accent-blue transition-all disabled:opacity-50"
+                                    >
+                                      <option value="RESEARCHER">Researcher</option>
+                                      <option value="ADMIN">Admin</option>
+                                      <option value="STUDENT">Student</option>
+                                      <option value="INSTITUTION">Institution</option>
+                                    </select>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          {users.filter((u) => {
+                            const q = userSearchQuery.toLowerCase();
+                            return (u.name || "").toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+                          }).length === 0 && (
+                            <tr>
+                              <td colSpan={4} className="py-10 text-center text-xs text-slate-500 font-medium">
+                                No users matched your search criteria.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
 

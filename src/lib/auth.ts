@@ -179,39 +179,5 @@ export async function getCurrentUser(): Promise<HealixUser | null> {
     }
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 3. Mock Cookie Session (Sandbox / Fallback)
-  // ──────────────────────────────────────────────────────────────
-  try {
-    const mockEmail = cookieStore.get("healix_mock_user_email")?.value;
-
-    if (mockEmail) {
-      // Try to find in local DB first
-      let dbUser = await prisma.user.findUnique({
-        where: { email: mockEmail },
-        include: { researcher: true },
-      });
-
-      if (!dbUser) {
-        // Auto-provision — user registered but DB may have been unavailable
-        dbUser = await autoProvisionLocalUser(mockEmail, mockEmail.split("@")[0]) as any;
-      }
-
-      if (dbUser) {
-        return {
-          id: dbUser.id,
-          email: dbUser.email,
-          name: dbUser.name,
-          role: dbUser.role,
-          photoUrl: dbUser.photoUrl,
-          researcherId: (dbUser as any).researcher?.id,
-          researcherSlug: (dbUser as any).researcher?.slug || undefined,
-        };
-      }
-    }
-  } catch (err) {
-    console.error("Failed to read mock cookies in server component", err);
-  }
-
   return null;
 }

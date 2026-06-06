@@ -9,19 +9,7 @@ import { ChevronRight, Mail, Lock, User as UserIcon, ShieldAlert, UserCheck, Che
 import ScientificBackground from "@/components/canvas/ScientificBackground";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
-interface OAuthProfile {
-  name: string;
-  email: string;
-  mockLoginEmail: string;
-  avatar: string;
-}
-
-const OAUTH_PROFILES: Record<"Google", OAuthProfile[]> = {
-  Google: [
-    { name: "Dr. Avnish Verma", email: "avnishverma718@gmail.com", mockLoginEmail: "avnish.verma@healix.com", avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Avnish" },
-    { name: "Dr. Priya Sharma", email: "priya.sharma@iisc.ac.in", mockLoginEmail: "priya.sharma@iisc.ac.in", avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Priya" },
-  ],
-};
+// OAUTH_PROFILES removed for production
 
 export default function LoginClient() {
   const router = useRouter();
@@ -47,9 +35,8 @@ export default function LoginClient() {
   const [error, setError] = useState("");
   const [isClerkEnabled, setIsClerkEnabled] = useState(false);
 
-  // Simulated OAuth States
+  // OAuth States
   const [activeOAuthProvider, setActiveOAuthProvider] = useState<"Google" | null>(null);
-  const [selectedProfileIndex, setSelectedProfileIndex] = useState(0);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [oauthSuccess, setOauthSuccess] = useState(false);
 
@@ -95,52 +82,35 @@ export default function LoginClient() {
       const email = decoded.email;
       const name = decoded.name || email.split("@")[0];
 
-      if (isSupabaseConfigured) {
-        const { data, error: authError } = await supabase.auth.signInWithIdToken({
-          provider: "google",
-          token: idToken,
-        });
+      if (!isSupabaseConfigured) {
+        throw new Error("Supabase is not configured.");
+      }
 
-        if (authError) throw authError;
+      const { data, error: authError } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: idToken,
+      });
 
-        // Sync profile to database
-        const syncRes = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            name,
-            role: "RESEARCHER",
-            triggerWelcome: true,
-          }),
-        });
-        const syncData = await syncRes.json();
-        if (syncData.error) throw new Error(syncData.error);
+      if (authError) throw authError;
 
-        if (data.session) {
-          setOauthSuccess(true);
-          setTimeout(() => {
-            handleLoginSuccess(email, data.session.access_token);
-            setActiveOAuthProvider(null);
-            setOauthSuccess(false);
-          }, 900);
-        }
-      } else {
-        // Sync locally in sandbox
-        await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            name,
-            role: "RESEARCHER",
-            triggerWelcome: true,
-          }),
-        });
+      // Sync profile to database
+      const syncRes = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name,
+          role: "RESEARCHER",
+          triggerWelcome: true,
+        }),
+      });
+      const syncData = await syncRes.json();
+      if (syncData.error) throw new Error(syncData.error);
 
+      if (data.session) {
         setOauthSuccess(true);
         setTimeout(() => {
-          handleLoginSuccess(email);
+          handleLoginSuccess(email, data.session.access_token);
           setActiveOAuthProvider(null);
           setOauthSuccess(false);
         }, 900);
@@ -202,23 +172,7 @@ export default function LoginClient() {
     checkRedirectSession();
   }, []);
 
-  const handleRealOAuthSignIn = async (provider: "github" | "linkedin_oidc") => {
-    setLoading(true);
-    setError("");
-    try {
-      const { error: oauthErr } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/login`,
-        },
-      });
-      if (oauthErr) throw oauthErr;
-    } catch (err: any) {
-      console.error(`${provider} OAuth trigger error:`, err);
-      setError(err.message || `${provider} authentication failed.`);
-      setLoading(false);
-    }
-  };
+  // handleRealOAuthSignIn removed
 
   // OTP Countdown timer
   useEffect(() => {
@@ -229,52 +183,14 @@ export default function LoginClient() {
     return () => clearTimeout(timer);
   }, [showOtpScreen, otpResendCountdown]);
 
-  const handleLoginSuccess = (email: string, sessionToken?: string) => {
-    if (sessionToken) {
-      document.cookie = `healix_supabase_token=${sessionToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
-    } else {
-      document.cookie = `healix_mock_user_email=${email}; path=/; max-age=${60 * 60 * 24 * 7};`;
-    }
+  const handleLoginSuccess = (email: string, sessionToken: string) => {
+    document.cookie = `healix_supabase_token=${sessionToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
     
     router.refresh();
     if (email === "admin@healix.com") {
       router.push("/admin");
     } else {
       router.push("/projects");
-    }
-  };
-
-  const handleBypassLogin = async (email: string, role: string, name: string) => {
-    setLoading(true);
-    setError("");
-
-    try {
-      // Use the admin signup endpoint — handles both new and existing users,
-      // auto-confirms emails, and syncs to local DB
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password: "HealixBioLabs2026!",
-          name,
-          role,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.accessToken) {
-        handleLoginSuccess(email, data.accessToken);
-      } else {
-        // Fallback to mock session
-        handleLoginSuccess(email);
-      }
-    } catch (err: any) {
-      console.error("Bypass login failed:", err);
-      handleLoginSuccess(email); // Always succeed for sandbox accounts
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -288,67 +204,66 @@ export default function LoginClient() {
     setError("");
 
     try {
-      if (isSupabaseConfigured) {
-        const { data, error: authError } = await supabase.auth.signInWithPassword({
-          email: emailInput.trim(),
-          password: passwordInput,
-        });
+      if (!isSupabaseConfigured) {
+        setError("Supabase authentication is not configured in this environment.");
+        setLoading(false);
+        return;
+      }
 
-        if (authError) {
-          // If email is not confirmed, use server-side admin to auto-confirm then retry
-          if (
-            authError.message.toLowerCase().includes("email not confirmed") ||
-            authError.message.toLowerCase().includes("not confirmed")
-          ) {
-            const adminRes = await fetch("/api/auth/signup", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                email: emailInput.trim(),
-                password: passwordInput,
-                name: emailInput.trim().split("@")[0],
-                role: "RESEARCHER",
-              }),
-            });
-            const adminData = await adminRes.json();
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: emailInput.trim(),
+        password: passwordInput,
+      });
 
-            if (adminData.accessToken) {
-              handleLoginSuccess(emailInput.trim(), adminData.accessToken);
-              return;
-            } else if (adminData.success) {
-              // Confirmed but no token yet — fall back to mock session
-              handleLoginSuccess(emailInput.trim());
-              return;
-            }
-          }
-
-          // Invalid credentials or other error
-          if (authError.message.toLowerCase().includes("invalid login credentials")) {
-            setError("Incorrect email or password. Please check your credentials.");
-          } else {
-            setError(authError.message);
-          }
-          setLoading(false);
-          return;
-        }
-
-        if (data.session) {
-          // Sync user to local DB (non-blocking — ensures profile exists)
-          fetch("/api/auth/register", {
+      if (authError) {
+        if (
+          authError.message.toLowerCase().includes("email not confirmed") ||
+          authError.message.toLowerCase().includes("not confirmed")
+        ) {
+          const adminRes = await fetch("/api/auth/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: emailInput.trim(),
-              name: data.session.user?.user_metadata?.full_name || emailInput.trim().split("@")[0],
+              password: passwordInput,
+              name: emailInput.trim().split("@")[0],
               role: "RESEARCHER",
             }),
-          }).catch(() => {}); // Non-blocking — don't await
+          });
+          const adminData = await adminRes.json();
 
-          handleLoginSuccess(emailInput.trim(), data.session.access_token);
+          if (adminData.accessToken) {
+            handleLoginSuccess(emailInput.trim(), adminData.accessToken);
+            return;
+          } else if (adminData.success) {
+            setError("Account confirmed. Please log in using your password.");
+            setLoading(false);
+            return;
+          }
         }
-      } else {
-        // Supabase not configured — mock session
-        handleLoginSuccess(emailInput.trim().toLowerCase());
+
+        if (authError.message.toLowerCase().includes("invalid login credentials")) {
+          setError("Incorrect email or password. Please check your credentials.");
+        } else {
+          setError(authError.message);
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (data.session) {
+        // Sync user to local DB
+        await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: emailInput.trim(),
+            name: data.session.user?.user_metadata?.full_name || emailInput.trim().split("@")[0],
+            role: "RESEARCHER",
+          }),
+        }).catch(() => {});
+
+        handleLoginSuccess(emailInput.trim(), data.session.access_token);
       }
     } catch (err: any) {
       setError(err.message || "Authentication failed.");
@@ -456,13 +371,10 @@ export default function LoginClient() {
       if (signupData.accessToken) {
         // Admin confirmed + session created successfully
         handleLoginSuccess(emailInput.trim(), signupData.accessToken);
-      } else if (signupData.requiresConfirmation) {
-        // Admin key not configured — Supabase requires email confirmation
-        // Fall back to mock session since OTP already verified the email
-        handleLoginSuccess(emailInput.trim());
       } else {
-        // No session but no error — use mock session
-        handleLoginSuccess(emailInput.trim());
+        setError("Registration complete. Please log in using the secure portal.");
+        setShowOtpScreen(false);
+        setActiveTab("signin");
       }
     } catch (err: any) {
       setError(err.message || "Registration verification failed.");
@@ -526,48 +438,7 @@ export default function LoginClient() {
     }
   };
 
-  const handleOAuthSubmit = () => {
-    if (!activeOAuthProvider) return;
-    setOauthLoading(true);
-    
-    // Simulate network authentication roundtrip
-    setTimeout(() => {
-      setOauthLoading(false);
-      setOauthSuccess(true);
-      
-      setTimeout(() => {
-        const profile = OAUTH_PROFILES[activeOAuthProvider][selectedProfileIndex];
-        const persona = mockPersonas.find(p => p.email === profile.mockLoginEmail) || mockPersonas[0];
-        handleBypassLogin(profile.mockLoginEmail, persona.role, persona.name);
-        
-        // Reset states
-        setActiveOAuthProvider(null);
-        setOauthSuccess(false);
-        setSelectedProfileIndex(0);
-      }, 900);
-    }, 1300);
-  };
-
-  const mockPersonas = [
-    {
-      name: "Dr. Avnish Verma",
-      email: "avnish.verma@healix.com",
-      role: "RESEARCHER",
-      desc: "Lead researcher with verified badge and publications.",
-    },
-    {
-      name: "Dr. Priya Sharma",
-      email: "priya.sharma@iisc.ac.in",
-      role: "RESEARCHER",
-      desc: "IISc professor, genome editing expert.",
-    },
-    {
-      name: "Healix Admin",
-      email: "admin@healix.com",
-      role: "ADMIN",
-      desc: "Full administrative controls and review queues.",
-    },
-  ];
+  // handleOAuthSubmit and mockPersonas removed
 
   return (
     <div className="relative min-h-screen bg-background flex items-center justify-center overflow-hidden py-12 px-4 sm:px-6 lg:px-8">
@@ -935,7 +806,6 @@ export default function LoginClient() {
                       type="button"
                       onClick={() => {
                         setActiveOAuthProvider("Google");
-                        setSelectedProfileIndex(0);
                       }}
                       className="flex items-center justify-center space-x-3 bg-white/5 hover:bg-white/10 border border-slate-700 hover:border-blue-500/50 py-3 rounded-xl transition-all duration-200 cursor-pointer text-white"
                     >
@@ -947,40 +817,6 @@ export default function LoginClient() {
                       </svg>
                       <span className="text-sm font-bold tracking-wide">Continue with Google</span>
                     </motion.button>
-                  </div>
-
-
-                  <div className="relative flex py-1 items-center">
-                    <div className="flex-grow border-t border-slate-800/80"></div>
-                    <span className="flex-shrink mx-3.5 text-[9px] text-slate-500 uppercase tracking-widest font-bold">
-                      Quick Bypass Selectors
-                    </span>
-                    <div className="flex-grow border-t border-slate-800/80"></div>
-                  </div>
-
-                  {/* Persona Quick Selectors */}
-                  <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
-                    {mockPersonas.map((persona) => (
-                      <motion.button
-                        whileHover={{ scale: 1.01, x: 2 }}
-                        whileTap={{ scale: 0.99 }}
-                        key={persona.email}
-                        onClick={() => handleBypassLogin(persona.email, persona.role, persona.name)}
-                        disabled={loading}
-                        className="w-full text-left bg-slate-900/20 hover:bg-slate-900 border border-slate-800/80 hover:border-primary-yellow/30 p-2.5 rounded-xl transition-all duration-200 flex items-start space-x-2.5 cursor-pointer"
-                      >
-                        <UserCheck className="w-4 h-4 text-primary-yellow shrink-0 mt-0.5" />
-                        <div className="flex-grow">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-slate-300">{persona.name}</span>
-                            <span className="text-[8px] uppercase tracking-wider text-accent-blue font-bold">
-                              {persona.role}
-                            </span>
-                          </div>
-                          <p className="text-[9px] text-slate-500 font-medium">{persona.email}</p>
-                        </div>
-                      </motion.button>
-                    ))}
                   </div>
                 </motion.div>
               )}
@@ -1077,88 +913,19 @@ export default function LoginClient() {
                     exit={{ opacity: 0 }}
                     className="space-y-4"
                   >
-                    {activeOAuthProvider === "Google" ? (
-                      <div className="space-y-4 flex flex-col items-center">
-                        <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-4 text-[11px] text-slate-400 leading-relaxed text-center w-full">
-                          <p>Click the official Google button below to sign in using your Google account in our secure authentication environment.</p>
-                        </div>
-                        <div id="google-signin-button-container" className="my-2 min-h-[40px] w-full flex justify-center" />
-                        <button
-                          type="button"
-                          onClick={() => setActiveOAuthProvider(null)}
-                          className="w-full bg-slate-950/60 border border-slate-800 hover:bg-slate-950 hover:border-slate-800 text-slate-300 font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all cursor-pointer text-center"
-                        >
-                          Cancel
-                        </button>
+                    <div className="space-y-4 flex flex-col items-center">
+                      <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-4 text-[11px] text-slate-400 leading-relaxed text-center w-full">
+                        <p>Click the official Google button below to sign in using your Google account in our secure authentication environment.</p>
                       </div>
-                    ) : (
-                      <>
-                        {/* Permissions list */}
-                        <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-3 text-[10px] text-slate-400 leading-relaxed space-y-1">
-                          <span className="font-bold text-slate-400 uppercase tracking-wider block mb-1">Permissions requested:</span>
-                          <p>• Access your public profile details</p>
-                          <p>• Fetch verified primary email address</p>
-                        </div>
-
-                        {/* Profile selector dropdown */}
-                        <div className="space-y-1.5">
-                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">
-                            Select Sandbox Profile
-                          </label>
-                          <div className="space-y-2">
-                            {activeOAuthProvider === "Google" && OAUTH_PROFILES["Google"].map((profile, i) => {
-                              const isSelected = selectedProfileIndex === i;
-                              return (
-                                <button
-                                  key={profile.email}
-                                  onClick={() => setSelectedProfileIndex(i)}
-                                  className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
-                                    isSelected 
-                                      ? "bg-slate-900 border-accent-blue/50 text-white" 
-                                      : "bg-slate-950/40 border-slate-800 hover:bg-slate-900 hover:border-slate-800 text-slate-400"
-                                  }`}
-                                >
-                                  <div className="flex items-center space-x-3">
-                                    <img
-                                      src={profile.avatar}
-                                      alt={profile.name}
-                                      className="w-7 h-7 rounded-full border border-slate-800 shrink-0"
-                                    />
-                                    <div className="min-w-0">
-                                      <p className={`text-xs font-bold ${isSelected ? "text-slate-200" : "text-slate-400"}`}>{profile.name}</p>
-                                      <p className="text-[9px] truncate max-w-[170px]">{profile.email}</p>
-                                    </div>
-                                  </div>
-                                  {isSelected && (
-                                    <div className="w-4 h-4 rounded-full bg-accent-blue/15 border border-accent-blue/30 flex items-center justify-center text-accent-blue shrink-0">
-                                      <Check className="w-2.5 h-2.5" />
-                                    </div>
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="grid grid-cols-2 gap-3 pt-2">
-                          <button
-                            type="button"
-                            onClick={() => setActiveOAuthProvider(null)}
-                            className="bg-slate-950/60 border border-slate-800 hover:bg-slate-950 hover:border-slate-800 text-slate-300 font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all cursor-pointer text-center"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleOAuthSubmit}
-                            className="bg-accent-blue hover:bg-accent-blue/90 text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all cursor-pointer text-center shadow-sm shadow-blue-500/5"
-                          >
-                            Authorize
-                          </button>
-                        </div>
-                      </>
-                    )}
+                      <div id="google-signin-button-container" className="my-2 min-h-[40px] w-full flex justify-center" />
+                      <button
+                        type="button"
+                        onClick={() => setActiveOAuthProvider(null)}
+                        className="w-full bg-slate-950/60 border border-slate-800 hover:bg-slate-950 hover:border-slate-800 text-slate-300 font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all cursor-pointer text-center"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

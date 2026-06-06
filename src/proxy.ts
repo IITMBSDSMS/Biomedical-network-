@@ -36,6 +36,40 @@ export default function proxy(req: any, event: any) {
     // Fail-safe: continue if URL parsing fails
   }
 
+  // ──────────────────────────────────────────────────────────────
+  // Route Protection & Role Based Authentication Pipeline
+  // ──────────────────────────────────────────────────────────────
+  try {
+    const url = new URL(req.url);
+    const { pathname } = url;
+
+    const protectedPaths = ["/projects", "/training", "/admin"];
+    const isProtected = protectedPaths.some((path) => pathname === path || pathname.startsWith(path + "/"));
+
+    if (isProtected) {
+      const supabaseToken = req.cookies.get("healix_supabase_token")?.value;
+      const isAuthenticated = !!supabaseToken;
+
+      if (!isAuthenticated) {
+        const loginUrl = new URL("/login", req.url);
+        loginUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    }
+
+    // Redirect authenticated users away from the login page
+    if (pathname === "/login") {
+      const supabaseToken = req.cookies.get("healix_supabase_token")?.value;
+      const isAuthenticated = !!supabaseToken;
+
+      if (isAuthenticated) {
+        return NextResponse.redirect(new URL("/projects", req.url));
+      }
+    }
+  } catch (e) {
+    console.error("Auth proxy check failed:", e);
+  }
+
   if (handler) {
     return handler(req, event);
   }
