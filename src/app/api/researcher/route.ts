@@ -42,6 +42,15 @@ export async function POST(request: Request) {
           slug,
         },
       });
+
+      // Sync to User record
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          name: fullName,
+          photoUrl: photoUrl || user.photoUrl,
+        },
+      });
     } else {
       // Generate automatic Research ID: HX-RES-2026-XXXX
       const lastResearcher = await prisma.researcher.findFirst({
@@ -74,6 +83,15 @@ export async function POST(request: Request) {
           slug,
           isVerified: false, // Must be verified by admin
           researchScore: 10.0, // Initial base research score
+        },
+      });
+
+      // Sync to User record
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          name: fullName,
+          photoUrl: photoUrl || researcher.photoUrl,
         },
       });
 

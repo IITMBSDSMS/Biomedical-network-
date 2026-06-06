@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Award, BookOpen, CheckCircle, Edit, FolderGit2, GraduationCap, Link as LinkIcon, Mail, Check, AlertCircle } from "lucide-react";
+import { Award, BookOpen, CheckCircle, Edit, FolderGit2, GraduationCap, Link as LinkIcon, Mail, Check, AlertCircle, Loader2, UploadCloud } from "lucide-react";
 import { LinkedinIcon } from "@/components/ui/BrandIcons";
 import { motion, AnimatePresence } from "framer-motion";
 import { HealixUser } from "@/lib/auth";
@@ -45,6 +45,76 @@ export default function ProfileClient({ researcher, currentUser }: ProfileClient
   const [success, setSuccess] = useState(false);
 
   const isOwner = currentUser && currentUser.id === researcher.userId;
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      await uploadProfileImage(file);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      await uploadProfileImage(file);
+    }
+  };
+
+  const uploadProfileImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file (JPEG, PNG, SVG, or WEBP).");
+      return;
+    }
+
+    setUploadingImage(true);
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "avatars");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to upload image.");
+      }
+
+      const data = await res.json();
+      if (data.url) {
+        setPhotoUrl(data.url);
+      } else {
+        throw new Error(data.error || "Image upload failed");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "An error occurred during image upload.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -398,15 +468,77 @@ export default function ProfileClient({ researcher, currentUser }: ProfileClient
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 font-bold uppercase tracking-wider block">Photo URL</label>
-                    <input
-                      type="text"
-                      value={photoUrl}
-                      onChange={(e) => setPhotoUrl(e.target.value)}
-                      placeholder="e.g. Avatar SVG URL"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
-                    />
+                  <div className="space-y-1.5 flex flex-col justify-between">
+                    <div className="flex justify-between items-center">
+                      <label className="text-slate-400 font-bold uppercase tracking-wider block">Profile Photo</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowUrlInput(!showUrlInput)}
+                        className="text-[9px] text-slate-500 hover:text-slate-300 font-semibold"
+                      >
+                        {showUrlInput ? "Use Dropzone" : "Paste URL instead"}
+                      </button>
+                    </div>
+                    
+                    {showUrlInput ? (
+                      <input
+                        type="text"
+                        value={photoUrl}
+                        onChange={(e) => setPhotoUrl(e.target.value)}
+                        placeholder="e.g. https://domain.com/avatar.png"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      />
+                    ) : (
+                      <div
+                        onDragEnter={handleDrag}
+                        onDragOver={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDrop={handleDrop}
+                        className={`relative border border-dashed rounded-xl p-3.5 transition-all flex flex-col items-center justify-center min-h-[46px] ${
+                          dragActive
+                            ? "border-accent-blue bg-accent-blue/5"
+                            : "border-slate-800 bg-slate-900/40 hover:border-slate-700"
+                        }`}
+                      >
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                        
+                        {uploadingImage ? (
+                          <div className="flex flex-col items-center space-y-1 py-1">
+                            <Loader2 className="w-5 h-5 text-accent-blue animate-spin" />
+                            <span className="text-[10px] text-slate-500 font-medium">Uploading...</span>
+                          </div>
+                        ) : photoUrl ? (
+                          <div className="flex items-center space-x-3 w-full">
+                            <img
+                              src={photoUrl}
+                              alt="Preview"
+                              className="w-10 h-10 rounded-lg object-cover border border-slate-800 bg-slate-950"
+                            />
+                            <div className="flex-grow text-left overflow-hidden">
+                              <p className="text-[10px] font-bold text-slate-200">Photo Loaded</p>
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="text-[9px] text-accent-blue hover:underline font-bold uppercase tracking-wider mt-0.5"
+                              >
+                                Replace Photo
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-1 cursor-pointer w-full" onClick={() => fileInputRef.current?.click()}>
+                            <UploadCloud className="w-6 h-6 text-slate-500 mx-auto mb-1" />
+                            <p className="text-[10px] font-bold text-slate-300">Drag photo or click to browse</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
