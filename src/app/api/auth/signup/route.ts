@@ -115,11 +115,13 @@ export async function POST(req: NextRequest) {
       isNewUser = !dbUser;
 
       if (!dbUser) {
+        const isAdminEmail = cleanEmail === "admin@healix.com" || cleanEmail === "admin@biolabsresearch-healix.com";
+        const finalRole = isAdminEmail ? "ADMIN" : (role || "RESEARCHER").toUpperCase();
         dbUser = await prisma.user.create({
           data: {
             email: cleanEmail,
             name: name.trim(),
-            role: (role || "RESEARCHER").toUpperCase(),
+            role: finalRole,
           },
           include: { researcher: true },
         });

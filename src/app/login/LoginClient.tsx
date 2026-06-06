@@ -187,7 +187,7 @@ export default function LoginClient() {
     document.cookie = `healix_supabase_token=${sessionToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
     
     router.refresh();
-    if (email === "admin@healix.com") {
+    if (email === "admin@healix.com" || email === "admin@biolabsresearch-healix.com") {
       router.push("/admin");
     } else {
       router.push("/projects");

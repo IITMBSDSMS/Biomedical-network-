@@ -25,11 +25,12 @@ async function autoProvisionLocalUser(email: string, name: string, photoUrl?: st
     });
 
     if (!user) {
+      const isAdminEmail = email.toLowerCase() === "admin@healix.com" || email.toLowerCase() === "admin@biolabsresearch-healix.com";
       user = await prisma.user.create({
         data: {
           email,
           name: name || email.split("@")[0],
-          role: "RESEARCHER",
+          role: isAdminEmail ? "ADMIN" : "RESEARCHER",
           photoUrl: photoUrl || null,
         },
         include: { researcher: true },
