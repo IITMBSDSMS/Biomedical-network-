@@ -41,6 +41,7 @@ export default function ProfileClient({ researcher, currentUser }: ProfileClient
     safeJsonParseArray(researcher.skills).join(", ")
   );
   const [linkedIn, setLinkedIn] = useState(researcher.linkedIn || "");
+  const [institutionLogo, setInstitutionLogo] = useState(researcher.institutionLogo || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -48,8 +49,10 @@ export default function ProfileClient({ researcher, currentUser }: ProfileClient
   const isOwner = currentUser && currentUser.id === researcher.userId;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -131,6 +134,28 @@ export default function ProfileClient({ researcher, currentUser }: ProfileClient
     }
   };
 
+  const processLogoFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file for the logo.");
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setError("Logo is too large. Please use a file under 4 MB.");
+      return;
+    }
+    setUploadingLogo(true);
+    setError("");
+    try {
+      // Logos need less resolution — 160px max keeps them crisp and tiny
+      const dataUrl = await resizeToDataUrl(file, 160);
+      setInstitutionLogo(dataUrl);
+    } catch (err: any) {
+      setError("Could not process the logo. Please try a different file.");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -155,6 +180,7 @@ export default function ProfileClient({ researcher, currentUser }: ProfileClient
           photoUrl,
           bio,
           institutionName,
+          institutionLogo,
           researchInterests: interestsArray,
           skills: skillsArray,
           linkedIn,
@@ -213,8 +239,16 @@ export default function ProfileClient({ researcher, currentUser }: ProfileClient
               <p className="text-xs text-slate-400 font-mono tracking-wider font-bold">{researcher.researchId}</p>
 
               <div className="flex flex-wrap justify-center md:justify-start items-center gap-x-4 gap-y-2 text-xs text-slate-400 font-semibold">
-                <div className="flex items-center space-x-1.5">
-                  <GraduationCap className="w-4 h-4 text-slate-500" />
+                <div className="flex items-center space-x-2 bg-slate-900/40 border border-slate-800/60 rounded-full pl-2 pr-3 py-1">
+                  {researcher.institutionLogo ? (
+                    <img
+                      src={researcher.institutionLogo}
+                      alt={researcher.institutionName || "Institution"}
+                      className="w-4.5 h-4.5 rounded object-contain bg-white p-0.5 shrink-0"
+                    />
+                  ) : (
+                    <GraduationCap className="w-4 h-4 text-slate-500" />
+                  )}
                   <span>{researcher.institutionName || "Independent Researcher"}</span>
                 </div>
                 {researcher.linkedIn && (
@@ -562,27 +596,78 @@ export default function ProfileClient({ researcher, currentUser }: ProfileClient
                   </div>
                 </div>
 
-                {/* Institution & LinkedIn */}
+                {/* Institution & LinkedIn & Logo */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 font-bold uppercase tracking-wider block">Institution Name</label>
-                    <input
-                      type="text"
-                      value={institutionName}
-                      onChange={(e) => setInstitutionName(e.target.value)}
-                      placeholder="e.g. AIIMS New Delhi"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
-                    />
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-slate-400 font-bold uppercase tracking-wider block">Institution Name</label>
+                      <input
+                        type="text"
+                        value={institutionName}
+                        onChange={(e) => setInstitutionName(e.target.value)}
+                        placeholder="e.g. AIIMS New Delhi"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-slate-400 font-bold uppercase tracking-wider block">LinkedIn URL</label>
+                      <input
+                        type="text"
+                        value={linkedIn}
+                        onChange={(e) => setLinkedIn(e.target.value)}
+                        placeholder="e.g. https://linkedin.com/in/username"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-slate-400 font-bold uppercase tracking-wider block">LinkedIn URL</label>
-                    <input
-                      type="text"
-                      value={linkedIn}
-                      onChange={(e) => setLinkedIn(e.target.value)}
-                      placeholder="e.g. https://linkedin.com/in/username"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
-                    />
+
+                  <div className="space-y-1.5 flex flex-col justify-between">
+                    <label className="text-slate-400 font-bold uppercase tracking-wider block">Institution Logo</label>
+                    <div
+                      className="relative border border-dashed rounded-xl p-3.5 transition-all flex flex-col items-center justify-center min-h-[110px] border-slate-800 bg-slate-900/40 hover:border-slate-700"
+                    >
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            await processLogoFile(e.target.files[0]);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                      
+                      {uploadingLogo ? (
+                        <div className="flex flex-col items-center space-y-1 py-1">
+                          <Loader2 className="w-5 h-5 text-accent-blue animate-spin" />
+                          <span className="text-[10px] text-slate-500 font-medium">Uploading Logo...</span>
+                        </div>
+                      ) : institutionLogo ? (
+                        <div className="flex items-center space-x-3 w-full">
+                          <img
+                            src={institutionLogo}
+                            alt="Institution Logo Preview"
+                            className="w-12 h-12 rounded-lg object-contain border border-slate-800 bg-white p-1"
+                          />
+                          <div className="flex-grow text-left overflow-hidden">
+                            <p className="text-[10px] font-bold text-slate-200">Logo Loaded</p>
+                            <button
+                              type="button"
+                              onClick={() => logoInputRef.current?.click()}
+                              className="text-[9px] text-accent-blue hover:underline font-bold uppercase tracking-wider mt-0.5"
+                            >
+                              Replace Logo
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-2 cursor-pointer w-full" onClick={() => logoInputRef.current?.click()}>
+                          <UploadCloud className="w-6 h-6 text-slate-500 mx-auto mb-1" />
+                          <p className="text-[10px] font-bold text-slate-300">Click to upload logo</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

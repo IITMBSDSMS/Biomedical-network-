@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { fullName, photoUrl, bio, institutionName, researchInterests, skills, linkedIn } = body;
+    const { fullName, photoUrl, bio, institutionName, institutionLogo, researchInterests, skills, linkedIn } = body;
 
     if (!fullName) {
       return NextResponse.json({ error: "Full Name is required" }, { status: 400 });
@@ -36,6 +36,7 @@ export async function POST(request: Request) {
           photoUrl: photoUrl || researcher.photoUrl,
           bio,
           institutionName,
+          institutionLogo: institutionLogo || researcher.institutionLogo,
           researchInterests: JSON.stringify(researchInterests || []),
           skills: JSON.stringify(skills || []),
           linkedIn,
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
           photoUrl: photoUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${fullName}`,
           bio,
           institutionName,
+          institutionLogo,
           researchInterests: JSON.stringify(researchInterests || []),
           skills: JSON.stringify(skills || []),
           linkedIn,

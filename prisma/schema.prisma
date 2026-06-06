@@ -34,6 +34,7 @@ model Researcher {
   researchInterests  String          @default("[]") // JSON string list
   skills             String          @default("[]") // JSON string list
   linkedIn           String?
+  institutionLogo    String?
   isVerified         Boolean         @default(false)
   researchScore      Float           @default(0.0)
   publicationCount   Int             @default(0)

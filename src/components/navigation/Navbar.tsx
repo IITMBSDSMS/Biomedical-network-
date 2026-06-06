@@ -393,6 +393,50 @@ export default function Navbar({ currentUser }: NavbarProps) {
                         <p className="text-[10px] text-slate-500 truncate max-w-[200px]">{currentUser.email}</p>
                       </div>
                     </div>
+
+                    <div className={`py-2 border-t border-b ${isLightPage ? "border-slate-100" : "border-slate-800"} space-y-1`}>
+                      {currentUser.role === "RESEARCHER" && currentUser.researcherId && (
+                        <>
+                          <Link
+                            href={`/researcher/${currentUser.researcherSlug || currentUser.email.split("@")[0].replace(".", "-")}`}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={`flex items-center space-x-2 px-3 py-2 text-xs rounded-lg transition-all font-semibold ${
+                              isLightPage
+                                ? "text-slate-600 hover:text-[#0F172A] hover:bg-slate-50"
+                                : "text-slate-400 hover:text-white hover:bg-slate-900"
+                            }`}
+                          >
+                            <UserIcon className="w-3.5 h-3.5" />
+                            <span>My Research Profile</span>
+                          </Link>
+                          <Link
+                            href="/researcher/inbox"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={`flex items-center space-x-2 px-3 py-2 text-xs rounded-lg transition-all font-semibold ${
+                              isLightPage
+                                ? "text-slate-600 hover:text-[#0F172A] hover:bg-slate-50"
+                                : "text-slate-400 hover:text-white hover:bg-slate-900"
+                            }`}
+                          >
+                            <Inbox className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>My Inbox</span>
+                          </Link>
+                        </>
+                      )}
+                      <Link
+                        href="/training"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center space-x-2 px-3 py-2 text-xs rounded-lg transition-all font-semibold ${
+                          isLightPage
+                            ? "text-slate-600 hover:text-[#0F172A] hover:bg-slate-50"
+                            : "text-slate-400 hover:text-white hover:bg-slate-900"
+                        }`}
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Training Academy</span>
+                      </Link>
+                    </div>
+
                     {isClerkEnabled ? (
                       <ClerkSignOutButton
                         onSignOutSuccess={() => {
