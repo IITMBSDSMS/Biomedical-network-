@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://biomedical-network.vercel.app";
+  const baseUrl = "https://biolabsresearch-healix.com";
 
   const routes: { path: string; priority: number; changeFreq: MetadataRoute.Sitemap[number]["changeFrequency"] }[] = [
     { path: "", priority: 1.0, changeFreq: "daily" },

@@ -728,7 +728,7 @@ export default function LoginClient() {
                         />
                       </div>
                       <p className="text-[9px] text-slate-500 leading-normal mt-1.5 px-0.5">
-                        💡 <strong className="text-slate-400">Real Inbox Delivery:</strong> To test real email deliveries (OTP & Welcome Letter) directly to an inbox, use <span className="text-research-blue font-semibold">office@healix-technologies.com</span>. Other addresses will show an interactive on-screen bypass notice.
+                        💡 <strong className="text-slate-400">Real Inbox Delivery:</strong> To test real email deliveries (OTP & Welcome Letter) directly to an inbox, use <span className="text-research-blue font-semibold">office@biolabsresearch-healix.com</span>. Other addresses will show an interactive on-screen bypass notice.
                       </p>
                     </div>
 

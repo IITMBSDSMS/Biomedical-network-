@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Healix Technologies Pvt. Ltd.", url: "https://healix-technologies.com" }],
   creator: "Healix Technologies",
   publisher: "Healix Technologies Pvt. Ltd.",
-  metadataBase: new URL("https://biomedical-network.vercel.app"),
+  metadataBase: new URL("https://biolabsresearch-healix.com"),
   alternates: {
     canonical: "/",
   },
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     title: "Healix BioLabs | India's #1 Biomedical Research Network",
     description:
       "Connecting researchers, innovators, students and institutions through India's most advanced biomedical research platform. Publish papers, apply for fellowships, collaborate on projects.",
-    url: "https://biomedical-network.vercel.app",
+    url: "https://biolabsresearch-healix.com",
     siteName: "Healix BioLabs",
     locale: "en_IN",
     type: "website",
@@ -110,12 +110,12 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://biomedical-network.vercel.app/#organization",
+      "@id": "https://biolabsresearch-healix.com/#organization",
       name: "Healix BioLabs",
-      url: "https://biomedical-network.vercel.app",
+      url: "https://biolabsresearch-healix.com",
       logo: {
         "@type": "ImageObject",
-        url: "https://biomedical-network.vercel.app/logo.png",
+        url: "https://biolabsresearch-healix.com/logo.png",
         width: 512,
         height: 512,
       },
@@ -139,30 +139,30 @@ const jsonLd = {
     },
     {
       "@type": "WebSite",
-      "@id": "https://biomedical-network.vercel.app/#website",
-      url: "https://biomedical-network.vercel.app",
+      "@id": "https://biolabsresearch-healix.com/#website",
+      url: "https://biolabsresearch-healix.com",
       name: "Healix BioLabs",
       description: "India's Biomedical Research Network",
       publisher: {
-        "@id": "https://biomedical-network.vercel.app/#organization",
+        "@id": "https://biolabsresearch-healix.com/#organization",
       },
       potentialAction: {
         "@type": "SearchAction",
         target: {
           "@type": "EntryPoint",
           urlTemplate:
-            "https://biomedical-network.vercel.app/researchers?q={search_term_string}",
+            "https://biolabsresearch-healix.com/researchers?q={search_term_string}",
         },
         "query-input": "required name=search_term_string",
       },
     },
     {
       "@type": "WebPage",
-      "@id": "https://biomedical-network.vercel.app/#webpage",
-      url: "https://biomedical-network.vercel.app",
+      "@id": "https://biolabsresearch-healix.com/#webpage",
+      url: "https://biolabsresearch-healix.com",
       name: "Healix BioLabs | India's #1 Biomedical Research Network",
-      isPartOf: { "@id": "https://biomedical-network.vercel.app/#website" },
-      about: { "@id": "https://biomedical-network.vercel.app/#organization" },
+      isPartOf: { "@id": "https://biolabsresearch-healix.com/#website" },
+      about: { "@id": "https://biolabsresearch-healix.com/#organization" },
       description:
         "Connecting researchers, innovators, students and institutions through India's most advanced biomedical research platform.",
       breadcrumb: {
@@ -172,7 +172,7 @@ const jsonLd = {
             "@type": "ListItem",
             position: 1,
             name: "Home",
-            item: "https://biomedical-network.vercel.app",
+            item: "https://biolabsresearch-healix.com",
           },
         ],
       },

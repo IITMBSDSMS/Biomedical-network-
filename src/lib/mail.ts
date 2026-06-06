@@ -51,7 +51,7 @@ export async function sendEmail({ to, subject, body }: EmailParams): Promise<{ s
   try {
     const resend = new Resend(apiKey);
     const result = await resend.emails.send({
-      from: "Healix BioLabs <no-reply@healix-technologies.com>", // Custom verified domain
+      from: "Healix BioLabs <no-reply@biolabsresearch-healix.com>", // Custom verified domain
       to,
       subject,
       html: body,
@@ -91,7 +91,7 @@ export function getWelcomeTemplate(name: string, researchId?: string, slug?: str
       <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">
         <div style="background: linear-gradient(90deg, #0052D4 0%, #4364F7 50%, #F1B018 100%); height: 6px; width: 100%;"></div>
         <div style="padding: 32px 32px 16px 32px; text-align: center;">
-          <img src="https://healix-technologies.com/logo.png" alt="Healix BioLabs" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
+          <img src="https://biolabsresearch-healix.com/logo.png" alt="Healix BioLabs" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
         </div>
         <div style="padding: 0 32px 32px 32px;">
           <h2 style="color: #ffffff; font-size: 22px; font-weight: 800; margin-top: 0; margin-bottom: 16px; text-align: center;">Welcome to <span style="color: #F1B018;">Healix BioLabs</span></h2>
@@ -142,7 +142,7 @@ export function getOtpTemplate(name: string, otp: string): string {
       <div style="max-width: 500px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">
         <div style="background: linear-gradient(90deg, #0052D4 0%, #4364F7 50%, #F1B018 100%); height: 6px; width: 100%;"></div>
         <div style="padding: 32px 32px 16px 32px; text-align: center;">
-          <img src="https://healix-technologies.com/logo.png" alt="Healix BioLabs" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
+          <img src="https://biolabsresearch-healix.com/logo.png" alt="Healix BioLabs" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
         </div>
         <div style="padding: 0 32px 32px 32px;">
           <h2 style="color: #ffffff; font-size: 20px; font-weight: 800; margin-top: 0; margin-bottom: 16px; text-align: center;">Verify Your Account</h2>
@@ -186,7 +186,7 @@ export function getPublicationApprovedTemplate(title: string, authorName: string
   return `
     <div style="font-family: sans-serif; padding: 24px; color: #ffffff; background-color: #0A0A0A; border-radius: 12px; border: 1px solid #1E293B; max-width: 600px; margin: 0 auto;">
       <div style="text-align: center; margin-bottom: 20px;">
-        <img src="https://healix-technologies.com/logo.png" alt="Healix BioLabs" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
+        <img src="https://biolabsresearch-healix.com/logo.png" alt="Healix BioLabs" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
       </div>
       <h2 style="color: #F4B400; font-family: 'Space Grotesk', sans-serif; text-align: center; margin-top: 0;">Your Publication Has Been Approved</h2>
       <p style="color: #E2E8F0;">Dear ${authorName},</p>
@@ -210,7 +210,7 @@ export function getFellowshipReceivedTemplate(studentName: string, course: strin
   return `
     <div style="font-family: sans-serif; padding: 24px; color: #ffffff; background-color: #0A0A0A; border-radius: 12px; border: 1px solid #1E293B; max-width: 600px; margin: 0 auto;">
       <div style="text-align: center; margin-bottom: 20px;">
-        <img src="https://healix-technologies.com/logo.png" alt="Healix BioLabs" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
+        <img src="https://biolabsresearch-healix.com/logo.png" alt="Healix BioLabs" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
       </div>
       <h2 style="color: #F4B400; font-family: 'Space Grotesk', sans-serif; text-align: center; margin-top: 0;">Application Successfully Received</h2>
       <p style="color: #E2E8F0;">Dear ${studentName},</p>
@@ -233,7 +233,7 @@ export function getIncompleteProfileReminderTemplate(name: string, slug: string)
   return `
     <div style="font-family: sans-serif; padding: 24px; color: #ffffff; background-color: #0A0A0A; border-radius: 12px; border: 1px solid #1E293B; max-width: 600px; margin: 0 auto;">
       <div style="text-align: center; margin-bottom: 20px;">
-        <img src="https://healix-technologies.com/logo.png" alt="Healix BioLabs" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
+        <img src="https://biolabsresearch-healix.com/logo.png" alt="Healix BioLabs" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
       </div>
       <h2 style="color: #F4B400; font-family: 'Space Grotesk', sans-serif; text-align: center; margin-top: 0;">Complete Your Healix BioLabs Profile</h2>
       <p style="color: #E2E8F0;">Hi ${name},</p>
@@ -262,7 +262,7 @@ export function getChapterRegistrationTemplate(
       <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">
         <div style="background: linear-gradient(90deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%); height: 6px; width: 100%;"></div>
         <div style="padding: 32px 32px 16px 32px; text-align: center;">
-          <img src="https://healix-technologies.com/logo.png" alt="Healix BioLabs" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
+          <img src="https://biolabsresearch-healix.com/logo.png" alt="Healix BioLabs" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
         </div>
         <div style="padding: 0 32px 32px 32px;">
           <h2 style="color: #ffffff; font-size: 22px; font-weight: 800; margin-top: 0; margin-bottom: 8px; text-align: center;">Chapter Proposal Received</h2>
@@ -352,7 +352,7 @@ export function getAmbassadorApplicationTemplate(
       <div style="max-width: 580px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">
         <div style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 50%, #10B981 100%); height: 6px; width: 100%;"></div>
         <div style="padding: 32px 32px 16px 32px; text-align: center;">
-          <img src="https://healix-technologies.com/logo.png" alt="Healix BioLabs" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
+          <img src="https://biolabsresearch-healix.com/logo.png" alt="Healix BioLabs" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #1e293b; background-color: #020617; padding: 2px; display: inline-block;" />
         </div>
         <div style="padding: 0 32px 32px 32px;">
           <h2 style="color: #ffffff; font-size: 22px; font-weight: 800; margin-top: 0; margin-bottom: 8px; text-align: center;">Ambassador Application Received</h2>

@@ -469,7 +469,7 @@ export default function AdminDashboardClient({
         doc.setFontSize(7);
         doc.setTextColor(148, 163, 184);
         doc.text(`Healix BioLabs — Confidential  |  Page ${i} of ${pageCount}`, 14, 205);
-        doc.text("biomedical-network.vercel.app", 297 - 14, 205, { align: "right" });
+        doc.text("biolabsresearch-healix.com", 297 - 14, 205, { align: "right" });
       }
 
       doc.save(`HealixBioLabs_Ambassadors_${Date.now()}.pdf`);

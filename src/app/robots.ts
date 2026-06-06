@@ -15,7 +15,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin/", "/api/"],
       },
     ],
-    sitemap: "https://biomedical-network.vercel.app/sitemap.xml",
-    host: "https://biomedical-network.vercel.app",
+    sitemap: "https://biolabsresearch-healix.com/sitemap.xml",
+    host: "https://biolabsresearch-healix.com",
   };
 }

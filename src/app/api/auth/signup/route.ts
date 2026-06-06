@@ -146,8 +146,17 @@ export async function POST(req: NextRequest) {
           },
         });
       }
-    } catch (dbError) {
-      console.error("Database sync error (non-fatal):", dbError);
+    } catch (dbError: any) {
+      console.error("Database sync error (fatal):", dbError);
+      if (supabaseUserId && isSupabaseAdminConfigured) {
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(supabaseUserId);
+          console.log("Successfully rolled back Supabase Auth user after database sync error.");
+        } catch (deleteError) {
+          console.error("Failed to roll back Supabase Auth user:", deleteError);
+        }
+      }
+      throw dbError;
     }
 
     // Send welcome email for new users only
@@ -160,7 +169,7 @@ export async function POST(req: NextRequest) {
           dbUser.researcher?.slug
         );
       } catch (mailErr) {
-        console.error("Welcome email failed (non-fatal):", mailErr);
+        console.error("Welcome email failed:", mailErr);
       }
     }
 

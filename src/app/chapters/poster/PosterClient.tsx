@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 export default function PosterClient() {
-  const qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://biomedical-network.vercel.app/chapters";
+  const qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://biolabsresearch-healix.com/chapters";
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center py-10 px-4 text-slate-900 font-sans">

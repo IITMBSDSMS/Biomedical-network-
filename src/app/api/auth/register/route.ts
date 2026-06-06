@@ -64,24 +64,8 @@ export async function POST(req: NextRequest) {
         user.researcher = newProfile;
       }
     } catch (dbError: any) {
-      console.error("Database sync failed in register route, falling back to mock session:", dbError);
-      
-      const slugName = (name || email.split("@")[0])
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-      
-      user = {
-        id: "mock-uid-" + Math.random().toString(36).substr(2, 9),
-        email,
-        name: name || email.split("@")[0],
-        role: role.toUpperCase(),
-        researcher: role.toUpperCase() === "RESEARCHER" ? {
-          researchId: "HX-RES-2026-MOCK",
-          slug: `${slugName}-mock`
-        } : null
-      };
-      isNewUser = true;
+      console.error("Database sync failed in register route:", dbError);
+      throw dbError;
     }
 
     // Send Welcome Email if this is a newly registered user or triggerWelcome is active
