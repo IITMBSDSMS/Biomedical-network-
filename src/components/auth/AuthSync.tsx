@@ -13,11 +13,13 @@ export default function AuthSync() {
         const token = session?.access_token;
         if (token) {
           // Set cookie with secure attributes
-          document.cookie = `healix_supabase_token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
+          const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+          document.cookie = `healix_supabase_token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${isHttps ? "; Secure" : ""}`;
         }
       } else if (event === "SIGNED_OUT") {
         // Clear all session cookies
-        document.cookie = "healix_supabase_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure";
+        const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+        document.cookie = `healix_supabase_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${isHttps ? "; Secure" : ""}`;
         document.cookie = "healix_mock_user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
         
         router.refresh();

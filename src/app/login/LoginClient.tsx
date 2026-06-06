@@ -184,7 +184,8 @@ export default function LoginClient() {
   }, [showOtpScreen, otpResendCountdown]);
 
   const handleLoginSuccess = (email: string, sessionToken: string) => {
-    document.cookie = `healix_supabase_token=${sessionToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
+    const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+    document.cookie = `healix_supabase_token=${sessionToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${isHttps ? "; Secure" : ""}`;
     
     router.refresh();
     if (email === "admin@healix.com" || email === "admin@biolabsresearch-healix.com") {
