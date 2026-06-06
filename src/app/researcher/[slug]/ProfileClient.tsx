@@ -65,52 +65,66 @@ export default function ProfileClient({ researcher, currentUser }: ProfileClient
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      await uploadProfileImage(file);
+      await processImageFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      await uploadProfileImage(file);
+      await processImageFile(e.target.files[0]);
     }
   };
 
-  const uploadProfileImage = async (file: File) => {
+  /**
+   * Resize the selected image client-side using the Canvas API and store
+   * the result as a base64 JPEG data URL. No server upload is required —
+   * this completely avoids Vercel read-only filesystem and Supabase Storage
+   * permission issues.
+   */
+  const resizeToDataUrl = (file: File, maxPx = 320): Promise<string> =>
+    new Promise((resolve, reject) => {
+      if (typeof window === "undefined") return reject(new Error("Canvas not available"));
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Could not read file"));
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Could not decode image"));
+        img.onload = () => {
+          const ratio = Math.min(1, maxPx / Math.max(img.width, img.height));
+          const w = Math.round(img.width * ratio);
+          const h = Math.round(img.height * ratio);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return reject(new Error("Canvas context unavailable"));
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.88));
+        };
+        img.src = ev.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+
+  const processImageFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setError("Please select an image file (JPEG, PNG, SVG, or WEBP).");
+      setError("Please select an image file (JPEG, PNG, or WEBP).");
       return;
     }
-
+    // Guard: reject files over 8 MB before any processing
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Image is too large. Please use a file under 8 MB.");
+      return;
+    }
     setUploadingImage(true);
     setError("");
-
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "avatars");
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to upload image.");
-      }
-
-      const data = await res.json();
-      if (data.url) {
-        setPhotoUrl(data.url);
-      } else {
-        throw new Error(data.error || "Image upload failed");
-      }
+      const dataUrl = await resizeToDataUrl(file, 320);
+      setPhotoUrl(dataUrl);
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || "An error occurred during image upload.");
+      console.error("Image processing error:", err);
+      setError("Could not process the image. Please try a different file.");
     } finally {
       setUploadingImage(false);
     }

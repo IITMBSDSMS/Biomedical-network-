@@ -99,9 +99,10 @@ const user = {
     if (args.where.id) q = q.eq("id", args.where.id);
     if (args.where.email) q = q.eq("email", args.where.email);
     
-    const { data, error } = await q.single();
+    // Use maybeSingle() so we don't crash if PostgREST returns 0 rows
+    const { data, error } = await q.maybeSingle();
     if (error) err(error, "user.update");
-    if (args.include?.researcher && Array.isArray(data.researcher)) {
+    if (args.include?.researcher && data && Array.isArray(data.researcher)) {
       data.researcher = data.researcher[0] || null;
     }
     return data;

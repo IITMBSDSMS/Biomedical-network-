@@ -43,14 +43,18 @@ export async function POST(request: Request) {
         },
       });
 
-      // Sync to User record
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          name: fullName,
-          photoUrl: photoUrl || user.photoUrl,
-        },
-      });
+      // Sync name + photo to User record (non-blocking — don't fail the whole save if this errors)
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            name: fullName,
+            photoUrl: photoUrl || user.photoUrl,
+          },
+        });
+      } catch (syncErr) {
+        console.warn("user.update sync skipped:", syncErr);
+      }
     } else {
       // Generate automatic Research ID: HX-RES-2026-XXXX
       const lastResearcher = await prisma.researcher.findFirst({
@@ -86,14 +90,18 @@ export async function POST(request: Request) {
         },
       });
 
-      // Sync to User record
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          name: fullName,
-          photoUrl: photoUrl || researcher.photoUrl,
-        },
-      });
+      // Sync to User record (non-blocking)
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            name: fullName,
+            photoUrl: photoUrl || researcher.photoUrl,
+          },
+        });
+      } catch (syncErr) {
+        console.warn("user.update sync skipped:", syncErr);
+      }
 
       // Log email trigger welcome message
       await prisma.emailLog.create({
