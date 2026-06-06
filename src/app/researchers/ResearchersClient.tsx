@@ -141,7 +141,7 @@ export default function ResearchersClient({ researchers }: ResearchersClientProp
         </div>
 
         {/* ── Card Grid ── */}
-        <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           <AnimatePresence mode="popLayout">
             {filtered.map((res) => {
               const interests = safeJsonParseArray(res.researchInterests);
@@ -155,137 +155,113 @@ export default function ResearchersClient({ researchers }: ResearchersClientProp
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.94 }}
                   transition={{ duration: 0.3 }}
-                  className="group relative bg-[#0B0F19]/80 backdrop-blur-md border border-slate-800 hover:border-slate-700 rounded-3xl overflow-hidden flex flex-col shadow-md hover:shadow-xl hover:shadow-slate-900/50 transition-all duration-300"
+                  className="group relative bg-[#0B0F19]/60 backdrop-blur-md border border-slate-800 hover:border-slate-700/80 rounded-3xl overflow-hidden flex flex-col shadow-lg hover:shadow-2xl hover:shadow-slate-900/50 transition-all duration-300"
                 >
-                  {/* ── Card Header Banner with gradient + institution logo ── */}
-                  <div
-                    className="relative h-24 shrink-0 overflow-hidden"
-                    style={{
-                      background: `linear-gradient(135deg, hsl(${hue},55%,12%) 0%, hsl(${(hue+40)%360},45%,8%) 100%)`,
-                    }}
-                  >
-                    {/* Subtle grid texture */}
-                    <div
-                      className="absolute inset-0 opacity-10"
-                      style={{
-                        backgroundImage: `radial-gradient(circle, hsl(${hue},60%,60%) 1px, transparent 1px)`,
-                        backgroundSize: "18px 18px",
-                      }}
-                    />
+                  {/* ── Card Main Section (Split Left/Right) ── */}
+                  <div className="grid grid-cols-12 items-stretch min-h-[210px] flex-1">
+                    
+                    {/* Left Column: Portrait Large Photo */}
+                    <div className="col-span-5 relative overflow-hidden border-r border-slate-800/80 bg-slate-950">
+                      <img
+                        src={res.photoUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(res.fullName)}`}
+                        alt={res.fullName}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      
+                      {/* Online status indicator */}
+                      <span className="absolute bottom-2.5 right-2.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#0B0F19] shadow-sm shadow-emerald-500/50" />
 
-                    {/* Verified ribbon */}
-                    {res.isVerified && (
-                      <div className="absolute top-3 right-3 flex items-center gap-1 bg-blue-950/70 border border-blue-800/60 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                        <CheckCircle className="w-3 h-3 text-accent-blue" />
-                        <span className="text-[9px] font-bold text-accent-blue uppercase tracking-wider">Verified</span>
+                      {/* Verified Badge */}
+                      {res.isVerified && (
+                        <div className="absolute top-2 left-2 flex items-center gap-1 bg-blue-950/85 border border-blue-800/60 backdrop-blur-sm px-1.5 py-0.5 rounded-md">
+                          <CheckCircle className="w-2.5 h-2.5 text-accent-blue" />
+                          <span className="text-[7.5px] font-bold text-accent-blue uppercase tracking-wider">Verified</span>
+                        </div>
+                      )}
+
+                      {/* Research Score Ribbon */}
+                      <div className="absolute top-2 right-2 flex items-center gap-0.5 bg-amber-950/80 border border-amber-905/50 backdrop-blur-sm px-1.5 py-0.5 rounded-md">
+                        <Award className="w-2.5 h-2.5 text-primary-yellow" />
+                        <span className="text-[8.5px] font-black text-primary-yellow">{res.researchScore.toFixed(1)}</span>
                       </div>
-                    )}
-
-                    {/* Research Score chip */}
-                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-amber-950/70 border border-amber-800/50 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                      <Award className="w-3 h-3 text-primary-yellow" />
-                      <span className="text-[10px] font-extrabold text-primary-yellow">{res.researchScore.toFixed(1)}</span>
                     </div>
 
-                    {/* Institution logo — top-right corner of banner */}
-                    {res.institutionLogo ? (
-                      <div className="absolute bottom-[-28px] right-4 w-16 h-16 rounded-xl border-2 border-slate-800 bg-white shadow-lg overflow-hidden shrink-0 flex items-center justify-center">
-                        <img
-                          src={res.institutionLogo}
-                          alt={res.institutionName || "Institution"}
-                          className="w-full h-full object-contain p-1.5"
-                        />
-                      </div>
-                    ) : res.institutionName ? (
-                      <div className="absolute bottom-[-28px] right-4 w-16 h-16 rounded-xl border-2 border-slate-800 bg-slate-900 shadow-lg flex items-center justify-center shrink-0">
-                        <Building2 className="w-6 h-6 text-slate-500" />
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {/* ── Card Body ── */}
-                  <div className="flex flex-col flex-1 p-5 pt-4">
-
-                    {/* Researcher avatar + name */}
-                    <div className="flex items-start gap-4 mb-3" style={{ marginTop: res.institutionLogo || res.institutionName ? "8px" : "0" }}>
-                      <div className="relative shrink-0">
-                        <img
-                          src={res.photoUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(res.fullName)}`}
-                          alt={res.fullName}
-                          className="w-20 h-20 rounded-2xl object-cover border-2 border-slate-800 bg-slate-950 shadow-md group-hover:border-slate-700 transition-colors"
-                        />
-                        {/* Online indicator dot */}
-                        <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0B0F19]" />
-                      </div>
-
-                      <div className="min-w-0 flex-1 min-h-[80px] flex flex-col justify-center">
-                        <h3 className="text-base font-bold font-heading text-slate-100 leading-tight line-clamp-1">
-                          {res.fullName}
-                        </h3>
-                        <p className="text-[10px] text-slate-500 font-mono tracking-wider mt-0.5">{res.researchId}</p>
-                        {res.institutionName && (
-                          <div className="flex items-center gap-1.5 mt-1.5">
-                            <GraduationCap className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                            <span className="text-[10px] font-semibold text-slate-400 truncate">{res.institutionName}</span>
+                    {/* Right Column: College Logo, Name, ID, College Name, Papers/Projects */}
+                    <div className="col-span-7 p-4 flex flex-col justify-between space-y-3">
+                      
+                      {/* Top Row: Big College Logo */}
+                      <div className="flex justify-between items-start">
+                        {res.institutionLogo ? (
+                          <div className="w-14 h-14 rounded-xl border border-slate-800 bg-white shadow-sm overflow-hidden shrink-0 flex items-center justify-center p-1.5">
+                            <img
+                              src={res.institutionLogo}
+                              alt={res.institutionName || "Institution"}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-14 h-14 rounded-xl border border-slate-800 bg-slate-900/60 shadow-sm flex items-center justify-center shrink-0">
+                            <Building2 className="w-6 h-6 text-slate-500" />
                           </div>
                         )}
                       </div>
-                    </div>
 
-                    {/* Bio */}
-                    <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2 mb-3 flex-shrink-0">
-                      {res.bio || "Biomedical researcher on the Healix BioLabs network."}
-                    </p>
+                      {/* Middle: Name, ID, CollegeName */}
+                      <div className="space-y-1 text-left">
+                        <h3 className="text-xs font-bold font-heading text-white leading-snug line-clamp-2 group-hover:text-accent-blue transition-colors">
+                          {res.fullName}
+                        </h3>
+                        <p className="text-[9px] text-slate-400 font-mono tracking-wider">{res.researchId}</p>
+                        
+                        {res.institutionName && (
+                          <div className="flex items-center gap-1 mt-1 text-slate-300">
+                            <GraduationCap className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                            <span className="text-[10px] font-bold truncate max-w-[125px]" title={res.institutionName}>
+                              {res.institutionName}
+                            </span>
+                          </div>
+                        )}
 
-                    {/* Stats row */}
-                    <div className="flex items-center gap-3 mb-3 pb-3 border-b border-slate-800/70">
-                      <div className="text-center flex-1">
-                        <p className="text-sm font-extrabold font-heading text-research-blue">{res.publicationCount || 0}</p>
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Papers</p>
-                      </div>
-                      <div className="w-px h-8 bg-slate-800" />
-                      <div className="text-center flex-1">
-                        <p className="text-sm font-extrabold font-heading text-primary-yellow">{res.projectCount || 0}</p>
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Projects</p>
-                      </div>
-                      <div className="w-px h-8 bg-slate-800" />
-                      <div className="text-center flex-1">
-                        <p className="text-sm font-extrabold font-heading" style={{ color: `hsl(${hue},70%,65%)` }}>
-                          {res.researchScore.toFixed(0)}
-                        </p>
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Score</p>
-                      </div>
-                    </div>
-
-                    {/* Interest tags */}
-                    {interests.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {interests.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 text-[9px] font-bold rounded-md border border-slate-800 bg-slate-900/60 text-slate-400"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {interests.length > 3 && (
-                          <span className="px-2 py-0.5 text-[9px] font-bold rounded-md border border-slate-800 bg-slate-900/60 text-slate-500">
-                            +{interests.length - 3}
-                          </span>
+                        {/* Interests tags as small pills */}
+                        {interests.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {interests.slice(0, 2).map((tag) => (
+                              <span
+                                key={tag}
+                                className="px-1.5 py-0.5 text-[8px] font-semibold rounded bg-slate-900/80 border border-slate-800 text-slate-400 truncate max-w-[80px]"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
-                    )}
 
-                    {/* CTA */}
-                    <div className="mt-auto">
-                      <Link
-                        href={`/researcher/${res.slug}`}
-                        className="w-full flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-300 hover:bg-accent-blue hover:border-accent-blue hover:text-white transition-all duration-200 group/btn shadow-sm"
-                      >
-                        View Profile
-                        <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
-                      </Link>
+                      {/* Bottom Section: Papers and Projects */}
+                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-left">
+                        <div className="flex-1">
+                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Papers</p>
+                          <p className="text-xs font-black text-white mt-0.5">{res.publicationCount || 0}</p>
+                        </div>
+                        <div className="w-px h-5 bg-slate-800 mx-2" />
+                        <div className="flex-1">
+                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Projects</p>
+                          <p className="text-xs font-black text-white mt-0.5">{res.projectCount || 0}</p>
+                        </div>
+                      </div>
+
                     </div>
+                  </div>
+
+                  {/* ── View Profile CTA spanning full width at bottom ── */}
+                  <div className="border-t border-slate-800/80">
+                    <Link
+                      href={`/researcher/${res.slug}`}
+                      className="w-full flex items-center justify-center gap-1.5 text-xs font-bold py-3 bg-[#0B0F19]/40 hover:bg-accent-blue text-slate-300 hover:text-white transition-all duration-200 group/btn cursor-pointer"
+                    >
+                      <span>View Profile</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
+                    </Link>
                   </div>
                 </motion.div>
               );
