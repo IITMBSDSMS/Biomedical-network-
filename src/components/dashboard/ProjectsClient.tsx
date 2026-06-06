@@ -462,7 +462,7 @@ export default function ProjectsClient({ projects, researcher, allResearchers }:
               className="relative w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-2xl z-10 animate-in"
             >
               <div className="flex items-center justify-between mb-6 border-b border-slate-200 pb-4">
-                <h2 className="text-lg font-bold font-heading text-research-blue flex items-center space-x-2">
+                <h2 className="text-lg font-bold font-heading text-slate-900 flex items-center space-x-2">
                   <FolderGit2 className="w-5 h-5 text-primary-yellow" />
                   <span>Create Research Project</span>
                 </h2>
@@ -568,7 +568,7 @@ export default function ProjectsClient({ projects, researcher, allResearchers }:
               className="relative w-full max-w-sm bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-2xl z-10 animate-in"
             >
               <div className="flex items-center justify-between mb-6 border-b border-slate-200 pb-4">
-                <h2 className="text-base font-bold font-heading text-research-blue flex items-center space-x-2">
+                <h2 className="text-base font-bold font-heading text-slate-900 flex items-center space-x-2">
                   <UserPlus className="w-5 h-5 text-primary-yellow" />
                   <span>Invite Collaborator</span>
                 </h2>
