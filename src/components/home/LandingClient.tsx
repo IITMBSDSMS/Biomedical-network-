@@ -8,6 +8,256 @@ import { HealixUser } from "@/lib/auth";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import NetworkIntelligenceMap from "@/components/home/NetworkIntelligenceMap";
 import HeroWaves from "@/components/home/HeroWaves";
+import { LinkedinIcon } from "@/components/ui/BrandIcons";
+
+const leadershipSections = [
+  {
+    title: "Board of Advisors",
+    subtitle: "Guiding the scientific and strategic direction of BioLabs.",
+    members: [
+      {
+        id: "sameer-kalra",
+        name: "Dr. Sameer Kalra",
+        role: "Clinical Advisor & Consultant",
+        institution: "Sir Ganga Ram Hospital",
+        expertise: ["Clinical Research", "Internal Medicine", "Healthcare Policy"],
+        photo: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Dr. Sameer Kalra is a senior consultant and clinical advisor at Sir Ganga Ram Hospital, New Delhi, with over two decades of clinical experience. He specializes in health policy, internal medicine, and patient care diagnostics."
+      },
+      {
+        id: "renu-deshmukh",
+        name: "Dr. Renu Deshmukh",
+        role: "Associate Professor of Biophysics",
+        institution: "AIIMS New Delhi",
+        expertise: ["Structural Biology", "Bio-Imaging", "Genomics"],
+        photo: "https://images.unsplash.com/photo-1594824813573-246434de83fb?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Dr. Renu Deshmukh is a biophysics researcher and faculty member at AIIMS New Delhi. Her work focuses on electron microscopy, molecular dynamics, and cell structural integrity."
+      },
+      {
+        id: "k-ramesh",
+        name: "Prof. K. Ramesh",
+        role: "Professor of Biomedical Engineering",
+        institution: "IIT Delhi",
+        expertise: ["Tissue Engineering", "Biomaterials", "Microfluidics"],
+        photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Prof. K. Ramesh is a senior professor in the Department of Biomedical Engineering at IIT Delhi. He leads research in bio-material design, artificial organs, and lab-on-a-chip technologies."
+      },
+      {
+        id: "aditya-sen",
+        name: "Dr. Aditya Sen",
+        role: "Chief Scientific Advisor",
+        institution: "Healix Technologies",
+        expertise: ["Bio-computing", "Molecular Modeling", "Drug Discovery"],
+        photo: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Dr. Aditya Sen is an industry scientist and lead advisor at Healix Technologies, bringing deep expertise in computer-aided drug design, high-performance computing, and molecular dynamics simulations."
+      }
+    ]
+  },
+  {
+    title: "Executive Leadership",
+    subtitle: "Executive leaders driving the execution and operations of BioLabs.",
+    members: [
+      {
+        id: "avnish-verma",
+        name: "Avnish Verma",
+        role: "Founder & CEO",
+        institution: "Healix BioLabs / IIT Delhi",
+        expertise: ["Bio-Computation", "AI in Healthcare", "System Architecture"],
+        photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Avnish Verma is the Founder & CEO of Healix BioLabs. A researcher at IIT Delhi, he is building decentralized biomedical intelligence networks to bridge the gap between academic theory and clinical trial execution."
+      },
+      {
+        id: "mahima-sharma",
+        name: "Mahima Sharma",
+        role: "Chief Operating Officer",
+        institution: "Healix BioLabs",
+        expertise: ["Operations Management", "Research Alliances", "Corporate Growth"],
+        photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Mahima Sharma is the Chief Operating Officer of Healix BioLabs. She oversees operations, strategic institutional partnerships, and platform growth, ensuring clinical networks run efficiently."
+      },
+      {
+        id: "debarghya-bag",
+        name: "Debarghya Bag",
+        role: "Chief Medical Officer",
+        institution: "Healix BioLabs",
+        expertise: ["Clinical Trials", "Immunology", "Medical Devices"],
+        photo: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Debarghya Bag serves as the Chief Medical Officer at Healix BioLabs. He coordinates clinical trial protocols, device certifications, and immunology research pipelines."
+      }
+    ]
+  },
+  {
+    title: "Research & Innovation Council",
+    subtitle: "Driving interdisciplinary research across healthcare, biotechnology, AI, public health, and biomedical engineering.",
+    members: [
+      {
+        id: "swaranjali-sonje",
+        name: "Swaranjali Sonje",
+        role: "Head of Research & Innovation",
+        institution: "Healix BioLabs",
+        expertise: ["Biomedical Engineering", "Computational Neuroscience", "Deep Learning"],
+        photo: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Swaranjali Sonje leads the Research & Innovation Council, specializing in signal processing for brain-computer interfaces, deep learning in diagnostics, and clinical engineering."
+      },
+      {
+        id: "ojas-sah",
+        name: "Ojas Sah",
+        role: "Computational Biology Lead",
+        institution: "Research & Innovation Council",
+        expertise: ["Genomics Data Mining", "Structural Proteomics", "Bio-AI Systems"],
+        photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Ojas Sah is a computational biologist leading genomic data mining, structural protein folding calculations, and AI-driven biological modeling pipelines."
+      },
+      {
+        id: "bme-team",
+        name: "Biomedical Engineering Team",
+        role: "Core Engineering Division",
+        institution: "Healix BioLabs",
+        expertise: ["Sensor Fusion", "Microfluidic Chips", "Wearable Health Tech"],
+        photo: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "The Biomedical Engineering Team at Healix BioLabs builds hardware and firmware solutions, including multi-channel EEG headsets, microfluidic lab chips, and telemetry sensor nodes."
+      },
+      {
+        id: "vineet-kapoor",
+        name: "Dr. Vineet Kapoor",
+        role: "Clinical Innovation Lead",
+        institution: "Research & Innovation Council",
+        expertise: ["Nanomedicine", "Targeted Drug Delivery", "Toxicology"],
+        photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Dr. Vineet Kapoor directs toxicology analysis and nanomaterial synthesis, designing lipid vectors and targeted drug carrier systems."
+      }
+    ]
+  },
+  {
+    title: "Founding Research Associates",
+    subtitle: "Researchers and innovators contributing to the BioLabs mission from day one.",
+    members: [
+      {
+        id: "dhruv-advani",
+        name: "Dhruv Advani",
+        role: "Founding Research Associate",
+        institution: "AIIMS Delhi",
+        expertise: ["Clinical Research", "Medical Education", "Healthcare Innovation"],
+        photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Dhruv Advani is a founding research associate based at AIIMS Delhi. He leads clinical education, trials research, and health tech innovations to improve patient outcomes."
+      },
+      {
+        id: "rohan-mehta",
+        name: "Rohan Mehta",
+        role: "Research Associate",
+        institution: "IIT Bombay",
+        expertise: ["Orthotics", "Bio-materials", "Finite Element Analysis"],
+        photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Rohan Mehta is a mechanical and biomedical associate at IIT Bombay. He specializes in designing smart orthotics, finite element stress modeling, and biocompatibility assays."
+      },
+      {
+        id: "ananya-sen",
+        name: "Ananya Sen",
+        role: "Cognitive Science Associate",
+        institution: "Delhi University",
+        expertise: ["Behavioral Psychology", "Neuropsychology", "Cognitive Modeling"],
+        photo: "https://images.unsplash.com/photo-1534751516642-a131ffd103fd?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Ananya Sen is a cognitive science researcher focusing on neuropsychological evaluations, brain-computer haptic integrations, and behavioral psychology."
+      },
+      {
+        id: "join-network",
+        name: "Future Associates",
+        role: "Join the Network",
+        institution: "Healix BioLabs",
+        expertise: ["Biostatistics", "Clinical Data", "Scientific Writing"],
+        photo: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Healix BioLabs is constantly expanding its founding network of research associates. Apply to collaborate on global publications and gain access to computing nodes."
+      }
+    ]
+  },
+  {
+    title: "Mentors & Academic Experts",
+    subtitle: "Empowering students through mentorship, research, and collaboration.",
+    members: [
+      {
+        id: "shalini-mukherji",
+        name: "Dr. Shalini Mukherji",
+        role: "Principal Scientist",
+        institution: "CSIR-IGIB",
+        expertise: ["Transcriptomics", "Epigenetics", "Single-Cell Sequencing"],
+        photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Dr. Shalini Mukherji is a senior principal investigator at CSIR-IGIB, mentoring students in high-throughput sequencing analysis, RNA biology, and epigenetic profiling."
+      },
+      {
+        id: "kartik-nair",
+        name: "Kartik Nair",
+        role: "PhD Candidate & Mentor",
+        institution: "IISc Bangalore",
+        expertise: ["Quantum Computing", "Biophysics", "Math Modeling"],
+        photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Kartik Nair is a doctoral researcher at IISc Bangalore. He conducts research in quantum chemistry simulations, molecular docking models, and biophysical kinetics."
+      },
+      {
+        id: "sandeep-verma",
+        name: "Prof. Sandeep Verma",
+        role: "Professor of Chemistry",
+        institution: "IIT Kanpur",
+        expertise: ["Peptide Engineering", "Nucleic Acids", "Bio-Organic Chemistry"],
+        photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Prof. Sandeep Verma is a chemical biology professor at IIT Kanpur, leading research in peptide architecture, bio-inspired materials, and nucleic acid interactions."
+      },
+      {
+        id: "rajeshwari-nair",
+        name: "Rajeshwari Nair",
+        role: "VP of Bio-pharma R&D",
+        institution: "Biocon India",
+        expertise: ["Bio-similar Dev", "GMP Protocols", "FDA Filings"],
+        photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Rajeshwari Nair is a biopharmaceutical executive with Biocon India. She mentors student teams on manufacturing regulations, FDA filings, and clinical safety compliance."
+      }
+    ]
+  },
+  {
+    title: "Mental Health & Human Development Division",
+    subtitle: "Pioneering research and advocacy in psychology, cognitive sciences, and human development.",
+    members: [
+      {
+        id: "sudiksha-sharma",
+        name: "Sudiksha Sharma",
+        role: "Lead Psychologist",
+        institution: "Healix BioLabs Division",
+        expertise: ["Clinical Psychology", "Cognitive Behavioral", "Adolescent Dev"],
+        photo: "https://images.unsplash.com/photo-1594744803329-e58b31de215f?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Sudiksha Sharma leads clinical psychology research at the Division of Human Development, developing digital therapy frameworks and mental health diagnostic models."
+      },
+      {
+        id: "chaavi-sharma",
+        name: "Chaavi Sharma",
+        role: "Human Development Specialist",
+        institution: "Healix BioLabs Division",
+        expertise: ["Neurodevelopment", "Early Intervention", "Behavioral Science"],
+        photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=250&h=250",
+        linkedin: "https://linkedin.com",
+        bio: "Chaavi Sharma is a child psychologist and neurodevelopment specialist. She leads early intervention research and behavioral therapies for students and young adults."
+      }
+    ]
+  }
+];
 
 interface LandingClientProps {
   currentUser: HealixUser | null;
@@ -21,6 +271,7 @@ export default function LandingClient({
   featuredPublications,
 }: LandingClientProps) {
   
+  const [selectedProfileMember, setSelectedProfileMember] = React.useState<any | null>(null);
   const [activeBookIndex, setActiveBookIndex] = React.useState<number | null>(null);
   const isBookOpen = activeBookIndex !== null;
   const setIsBookOpen = (open: boolean) => {
@@ -628,6 +879,122 @@ export default function LandingClient({
               </div>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* OUR LEADERSHIP & RESEARCH NETWORK SECTION */}
+      <section className="py-24 bg-[#0B0F19]/10 border-b border-slate-900 relative z-10">
+        <div className="max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Main Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-20 space-y-3">
+            <div className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-slate-900/60 border border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-widest">
+              <Network className="w-3.5 h-3.5 text-accent-blue animate-pulse" />
+              <span>BioLabs Leadership Network</span>
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-heading font-extrabold text-white tracking-tight uppercase">
+              Our Leadership & Research Network
+            </h2>
+            <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+              Meet the distinguished board, executives, research councils, and associates driving the frontiers of biotechnology, AI, and healthcare innovation.
+            </p>
+          </div>
+
+          {/* Subsections Loop */}
+          {leadershipSections.map((section) => (
+            <div key={section.title} className="mb-24 last:mb-0">
+              
+              {/* Subsection Header */}
+              <div className="text-left mb-10 max-w-3xl border-l-2 border-accent-blue pl-4">
+                <h3 className="text-xl sm:text-2xl font-heading font-extrabold text-white uppercase tracking-tight">
+                  {section.title}
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 font-medium italic">
+                  {section.subtitle}
+                </p>
+              </div>
+
+              {/* Members Grid */}
+              <div className={`grid grid-cols-1 sm:grid-cols-2 ${
+                section.members.length === 2 
+                  ? "lg:grid-cols-2 max-w-4xl mx-auto" 
+                  : section.members.length === 3 
+                  ? "lg:grid-cols-3 max-w-6xl mx-auto" 
+                  : "lg:grid-cols-4"
+              } gap-6`}>
+                {section.members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="bg-[#0B0F19]/65 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/85 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-accent-blue/5 rounded-3xl p-5 shadow-xl flex flex-col justify-between group overflow-hidden transition-all duration-300 relative"
+                  >
+                    {/* Top Content */}
+                    <div className="space-y-4">
+                      {/* Photo Frame */}
+                      <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-800/80 shadow-md">
+                        <img
+                          src={member.photo}
+                          alt={member.name}
+                          className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500 ease-out"
+                        />
+                        {/* Gradient Shadow */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-85" />
+                        
+                        {/* LinkedIn icon overlay */}
+                        <a
+                          href={member.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-950/80 backdrop-blur-xs border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-[#0077B5] hover:bg-[#0077B5] transition-all shadow-md"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <LinkedinIcon className="w-4 h-4" />
+                        </a>
+                      </div>
+
+                      {/* Header Info */}
+                      <div className="space-y-1 text-left">
+                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-accent-blue transition-colors">
+                          {member.name}
+                        </h4>
+                        <p className="text-[10px] text-accent-blue font-bold uppercase tracking-wider leading-tight">
+                          {member.role}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-semibold leading-tight">
+                          {member.institution}
+                        </p>
+                      </div>
+
+                      {/* Expertise Badges */}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {member.expertise.map((tag) => (
+                          <span
+                            key={tag}
+                            className="text-[8px] font-bold px-2 py-0.5 rounded bg-slate-900/80 text-slate-400 border border-slate-800/80 tracking-wide font-mono uppercase"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Bottom Action */}
+                    <div className="pt-5 border-t border-slate-900/60 mt-5">
+                      <button
+                        onClick={() => setSelectedProfileMember(member)}
+                        className="w-full py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900/30 hover:bg-slate-900 text-slate-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center space-x-1 shadow-inner cursor-pointer"
+                      >
+                        <span>View Profile</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          ))}
+
         </div>
       </section>
 
@@ -1587,6 +1954,108 @@ export default function LandingClient({
           </div>
         </div>
       </section>
+
+      {/* DETAILED PROFILE MODAL */}
+      <AnimatePresence>
+        {selectedProfileMember && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+            onClick={() => setSelectedProfileMember(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              className="bg-[#0B0F19] border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative text-slate-300"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Top gradient accent */}
+              <div className="h-1.5 w-full bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500" />
+              
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedProfileMember(null)}
+                className="absolute top-6 right-6 p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="p-6 md:p-8 space-y-6">
+                
+                {/* Profile Header */}
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border border-slate-800 shadow-lg shrink-0 bg-slate-900">
+                    <img
+                      src={selectedProfileMember.photo}
+                      alt={selectedProfileMember.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="text-center sm:text-left space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <h3 className="text-xl md:text-2xl font-heading font-extrabold text-white">
+                        {selectedProfileMember.name}
+                      </h3>
+                      <a
+                        href={selectedProfileMember.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded bg-[#0077B5]/10 border border-[#0077B5]/20 text-[#0077B5] text-[10px] font-bold uppercase tracking-wider hover:bg-[#0077B5] hover:text-white transition-all w-fit mx-auto sm:mx-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <LinkedinIcon className="w-3.5 h-3.5" />
+                        <span>LinkedIn</span>
+                      </a>
+                    </div>
+                    <p className="text-xs md:text-sm font-bold text-accent-blue uppercase tracking-wider">
+                      {selectedProfileMember.role}
+                    </p>
+                    <p className="text-xs text-slate-400 font-semibold">
+                      {selectedProfileMember.institution}
+                    </p>
+                  </div>
+                </div>
+
+                {/* About & Bio */}
+                <div className="space-y-2.5">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider text-left">Biography & Background</h4>
+                  <p className="text-xs leading-relaxed text-slate-400 text-left">
+                    {selectedProfileMember.bio}
+                  </p>
+                </div>
+
+                {/* Expertise Badges */}
+                <div className="space-y-2.5">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider text-left">Areas of Expertise</h4>
+                  <div className="flex flex-wrap gap-2 justify-start">
+                    {selectedProfileMember.expertise.map((tag: string) => (
+                      <span
+                        key={tag}
+                        className="text-[10px] font-bold px-3 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300 tracking-wide font-mono uppercase"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Institutional Credentials */}
+                <div className="pt-6 border-t border-slate-900/60 flex items-center justify-between text-[10px] text-slate-500">
+                  <span>Network Credentials: Verified Member</span>
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-[#3B82F6] font-bold">Healix Bio-Networks 2026</span>
+                </div>
+
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
