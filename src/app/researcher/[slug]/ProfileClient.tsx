@@ -146,8 +146,8 @@ export default function ProfileClient({ researcher, currentUser }: ProfileClient
     setUploadingLogo(true);
     setError("");
     try {
-      // Logos need less resolution — 160px max keeps them crisp and tiny
-      const dataUrl = await resizeToDataUrl(file, 160);
+      // Logos need decent resolution — 320px max keeps them crisp on high-DPI screens
+      const dataUrl = await resizeToDataUrl(file, 320);
       setInstitutionLogo(dataUrl);
     } catch (err: any) {
       setError("Could not process the logo. Please try a different file.");

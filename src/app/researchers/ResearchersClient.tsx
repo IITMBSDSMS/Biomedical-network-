@@ -189,16 +189,16 @@ export default function ResearchersClient({ researchers }: ResearchersClientProp
 
                     {/* Institution logo — top-right corner of banner */}
                     {res.institutionLogo ? (
-                      <div className="absolute bottom-[-20px] right-4 w-12 h-12 rounded-xl border-2 border-slate-800 bg-slate-950 shadow-lg overflow-hidden shrink-0">
+                      <div className="absolute bottom-[-28px] right-4 w-16 h-16 rounded-xl border-2 border-slate-800 bg-white shadow-lg overflow-hidden shrink-0 flex items-center justify-center">
                         <img
                           src={res.institutionLogo}
                           alt={res.institutionName || "Institution"}
-                          className="w-full h-full object-contain p-1"
+                          className="w-full h-full object-contain p-1.5"
                         />
                       </div>
                     ) : res.institutionName ? (
-                      <div className="absolute bottom-[-20px] right-4 w-12 h-12 rounded-xl border-2 border-slate-800 bg-slate-900 shadow-lg flex items-center justify-center shrink-0">
-                        <Building2 className="w-5 h-5 text-slate-500" />
+                      <div className="absolute bottom-[-28px] right-4 w-16 h-16 rounded-xl border-2 border-slate-800 bg-slate-900 shadow-lg flex items-center justify-center shrink-0">
+                        <Building2 className="w-6 h-6 text-slate-500" />
                       </div>
                     ) : null}
                   </div>
@@ -207,25 +207,25 @@ export default function ResearchersClient({ researchers }: ResearchersClientProp
                   <div className="flex flex-col flex-1 p-5 pt-4">
 
                     {/* Researcher avatar + name */}
-                    <div className="flex items-start gap-3 mb-3" style={{ marginTop: res.institutionLogo || res.institutionName ? "4px" : "0" }}>
+                    <div className="flex items-start gap-4 mb-3" style={{ marginTop: res.institutionLogo || res.institutionName ? "8px" : "0" }}>
                       <div className="relative shrink-0">
                         <img
                           src={res.photoUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(res.fullName)}`}
                           alt={res.fullName}
-                          className="w-14 h-14 rounded-2xl object-cover border-2 border-slate-800 bg-slate-950 shadow-md group-hover:border-slate-700 transition-colors"
+                          className="w-20 h-20 rounded-2xl object-cover border-2 border-slate-800 bg-slate-950 shadow-md group-hover:border-slate-700 transition-colors"
                         />
                         {/* Online indicator dot */}
-                        <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#0B0F19]" />
+                        <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0B0F19]" />
                       </div>
 
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-bold font-heading text-slate-100 leading-tight line-clamp-1">
+                      <div className="min-w-0 flex-1 min-h-[80px] flex flex-col justify-center">
+                        <h3 className="text-base font-bold font-heading text-slate-100 leading-tight line-clamp-1">
                           {res.fullName}
                         </h3>
                         <p className="text-[10px] text-slate-500 font-mono tracking-wider mt-0.5">{res.researchId}</p>
                         {res.institutionName && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <GraduationCap className="w-3 h-3 text-slate-600 shrink-0" />
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <GraduationCap className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                             <span className="text-[10px] font-semibold text-slate-400 truncate">{res.institutionName}</span>
                           </div>
                         )}
