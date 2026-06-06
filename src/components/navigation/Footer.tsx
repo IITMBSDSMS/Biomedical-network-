@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Dna } from "lucide-react";
-import { GithubIcon, LinkedinIcon, TwitterIcon } from "@/components/ui/BrandIcons";
+import { InstagramIcon, LinkedinIcon, TwitterIcon } from "@/components/ui/BrandIcons";
 import { motion } from "framer-motion";
 
 export default function Footer() {
@@ -67,8 +67,13 @@ export default function Footer() {
               >
                 <LinkedinIcon className="w-4 h-4" />
               </a>
-              <a href="#" className="text-slate-500 hover:text-accent-blue transition-colors">
-                <GithubIcon className="w-4 h-4" />
+              <a
+                href="https://www.instagram.com/biolabsofficial/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-500 hover:text-accent-blue transition-colors"
+              >
+                <InstagramIcon className="w-4 h-4" />
               </a>
             </div>
           </div>
