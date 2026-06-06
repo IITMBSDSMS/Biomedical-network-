@@ -67,7 +67,7 @@ export default function ContactClient({ currentUser }: ContactClientProps) {
             </div>
             <div className="flex items-center space-x-3">
               <Mail className="w-5 h-5 text-accent-blue shrink-0" />
-              <span>relations@healix.com</span>
+              <span>relations@biolabsresearch-healix.com</span>
             </div>
             <div className="flex items-center space-x-3">
               <Phone className="w-5 h-5 text-primary-yellow shrink-0" />

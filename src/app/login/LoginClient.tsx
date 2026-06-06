@@ -722,7 +722,7 @@ export default function LoginClient() {
                         </span>
                         <input
                           type="email"
-                          placeholder="Enter email (e.g. rajesh@healix.com)"
+                          placeholder="Enter email (e.g. rajesh@biolabsresearch-healix.com)"
                           value={emailInput}
                           onChange={(e) => setEmailInput(e.target.value)}
                           className="w-full bg-slate-900/40 border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl py-2.5 pl-9 pr-4 text-xs font-medium focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue transition-all"
