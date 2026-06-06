@@ -56,7 +56,12 @@ export default function Footer() {
               Connecting researchers, innovators, students, and institutions through one unified platform. Building the future of biomedical intelligence.
             </p>
             <div className="flex space-x-4 pt-2">
-              <a href="#" className="text-slate-500 hover:text-accent-blue transition-colors">
+              <a
+                href="https://twitter.com/HealixBioLabs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-500 hover:text-accent-blue transition-colors"
+              >
                 <TwitterIcon className="w-4 h-4" />
               </a>
               <a
