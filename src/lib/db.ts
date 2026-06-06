@@ -17,7 +17,19 @@ function createPrismaClient() {
     );
   }
 
-  const pool = new Pool({ connectionString: dbUrl });
+  // Use PrismaPg driver adapter with Supabase-compatible SSL settings.
+  // Supabase uses a self-signed SSL certificate chain, so we must set
+  // rejectUnauthorized: false to allow the connection in production environments.
+  const pool = new Pool({
+    connectionString: dbUrl,
+    ssl: dbUrl.includes("supabase") || dbUrl.includes("supabase.co") || process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : undefined,
+    max: 10,
+    connectionTimeoutMillis: 30000,
+    idleTimeoutMillis: 30000,
+  });
+
   const adapter = new PrismaPg(pool);
   return new PrismaClient({
     adapter,
@@ -36,5 +48,3 @@ if (process.env.NODE_ENV === "production") {
 }
 
 export { prisma };
-
-
