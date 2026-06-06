@@ -306,13 +306,13 @@ export default function Navbar({ currentUser }: NavbarProps) {
                   href="/login"
                   className={`flex items-center space-x-1.5 text-[10px] font-bold tracking-wider uppercase px-4 py-2.5 rounded-lg transition-all duration-200 cursor-pointer shadow-sm ${
                     isLandingPage && !(scrolled || mobileMenuOpen)
-                      ? "bg-white hover:bg-slate-100 text-slate-900"
+                      ? "bg-white hover:bg-slate-100 !text-slate-950"
                       : isLightPage
                         ? "bg-[#2563EB] hover:bg-blue-700 text-white"
                         : "bg-[#3B82F6] hover:bg-blue-600 text-white"
                   }`}
                 >
-                  <span>Sign In</span>
+                  <span className={isLandingPage && !(scrolled || mobileMenuOpen) ? "!text-slate-950" : ""}>Sign In</span>
                 </Link>
               )}
             </div>
