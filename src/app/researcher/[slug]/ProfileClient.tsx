@@ -6,6 +6,7 @@ import { Award, BookOpen, CheckCircle, Edit, FolderGit2, GraduationCap, Link as 
 import { LinkedinIcon } from "@/components/ui/BrandIcons";
 import { motion, AnimatePresence } from "framer-motion";
 import { HealixUser } from "@/lib/auth";
+import ConnectPanel from "@/components/ecosystem/ConnectPanel";
 
 interface ProfileClientProps {
   researcher: any;
@@ -271,6 +272,11 @@ export default function ProfileClient({ researcher, currentUser }: ProfileClient
         </div>
 
       </div>
+
+      {/* Student Connect Panel — visible only to logged-in non-owners */}
+      {currentUser && !isOwner && (
+        <ConnectPanel researcher={researcher} currentUser={currentUser} />
+      )}
 
       {/* Main split grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, User as UserIcon, LogOut, ChevronDown, BookOpen } from "lucide-react";
+import { Menu, X, User as UserIcon, LogOut, ChevronDown, BookOpen, Inbox } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
 import { HealixUser } from "@/lib/auth";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
@@ -253,6 +253,21 @@ export default function Navbar({ currentUser }: NavbarProps) {
                           >
                             <UserIcon className={`w-3.5 h-3.5 ${isLightPage ? "text-slate-400" : "text-slate-500"}`} />
                             <span>My Research Profile</span>
+                          </Link>
+                        )}
+
+                        {currentUser.role === "RESEARCHER" && currentUser.researcherId && (
+                          <Link
+                            href="/researcher/inbox"
+                            onClick={() => setAuthDropdownOpen(false)}
+                            className={`flex items-center space-x-2 px-3 py-2 text-xs rounded-lg transition-all font-semibold ${
+                              isLightPage
+                                ? "text-slate-600 hover:text-[#0F172A] hover:bg-slate-50"
+                                : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                            }`}
+                          >
+                            <Inbox className={`w-3.5 h-3.5 ${isLightPage ? "text-slate-400" : "text-emerald-500"}`} />
+                            <span>My Inbox</span>
                           </Link>
                         )}
 
