@@ -4,11 +4,11 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   BookOpen, Award, CheckCircle, Lock, Book, FileText, 
-  ChevronRight, ChevronLeft, X, ShieldCheck, FileCheck2, ArrowLeft, ArrowRight, Download
+  ChevronRight, ChevronLeft, X, ShieldCheck, FileCheck2, ArrowLeft, ArrowRight, Download,
+  MoreVertical, Calendar as CalendarIcon, Sparkles, Check, Play, Edit3
 } from "lucide-react";
 import Navbar from "@/components/navigation/Navbar";
 import Footer from "@/components/navigation/Footer";
-import ScientificBackground from "@/components/canvas/ScientificBackground";
 import { downloadCertificateAsPDF, CertificatePreview } from "@/components/ui/CertificateDownload";
 
 // Curriculum Data
@@ -17,6 +17,10 @@ const MODULES = [
     index: 0,
     title: "Scientific Inquiry & Hypothesis",
     description: "Formulating testable hypotheses, variable controls, and structured research parameters.",
+    provider: "Stanford University",
+    estCompletion: "Jun 21, 2026",
+    nextTask: "Introduction and Scientific Hypothesis Formulation",
+    duration: "Video (15 minutes)",
     slides: [
       {
         title: "The Core of Scientific Inquiry",
@@ -60,6 +64,10 @@ const MODULES = [
     index: 1,
     title: "Literature Reviews & Citations (BibTeX)",
     description: "Academic literature searches, metadata formatting, and BibTeX indexing guidelines.",
+    provider: "MIT - Massachusetts Institute of Technology",
+    estCompletion: "Jun 28, 2026",
+    nextTask: "BibTeX Formats and Literature Search Strategies",
+    duration: "Graded Assignment (30 minutes)",
     slides: [
       {
         title: "The Purpose of Literature Reviews",
@@ -71,7 +79,7 @@ const MODULES = [
       },
       {
         title: "Understanding BibTeX Format",
-        content: "BibTeX is the standard bibliographic management tool used in LaTeX documents. It structures reference metadata using key-value fields (author, title, journal, year, volume). This allows papers to be dynamically styled and indexed by publication registries."
+        content: "BibTeX is the standard bibliographic management tool used in LaTeX documents. It structures reference reference metadata using key-value fields (author, title, journal, year, volume). This allows papers to be dynamically styled and indexed by publication registries."
       },
       {
         title: "BibTeX Entry Types",
@@ -103,6 +111,10 @@ const MODULES = [
     index: 2,
     title: "Biomedical Methodologies & Safety",
     description: "Biosafety levels (BSL), containment practices, and genomic PCR procedures.",
+    provider: "Harvard University",
+    estCompletion: "Jul 5, 2026",
+    nextTask: "BSL-2 Lab Containment and PCR Wet-Lab Assays",
+    duration: "Video (20 minutes)",
     slides: [
       {
         title: "Laboratory Containment & BSL",
@@ -146,6 +158,10 @@ const MODULES = [
     index: 3,
     title: "Translational Medicine & Ethics",
     description: "Bridging bench science with clinical trials under ICMR & international ethical rules.",
+    provider: "IBM Watson Health",
+    estCompletion: "Jul 12, 2026",
+    nextTask: "Clinical Trial Ethics and Informed Consent Frameworks",
+    duration: "Graded Assignment (15 minutes)",
     slides: [
       {
         title: "What is Translational Medicine?",
@@ -193,7 +209,15 @@ export default function TrainingClient() {
   const [progress, setProgress] = useState<Record<number, boolean>>({});
   const [certificate, setCertificate] = useState<any>(null);
 
-  // Modals / Slides view state
+  // Tabs
+  const [activeTab, setActiveTab] = useState<"progress" | "completed" | "certificates">("progress");
+
+  // Career Goal Customizer
+  const [careerGoal, setCareerGoal] = useState("Biomedical Researcher");
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState("Biomedical Researcher");
+
+  // Active slideshow / quiz state
   const [activeModule, setActiveModule] = useState<any>(null);
   const [activeSlideIdx, setActiveSlideIdx] = useState(0);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -206,79 +230,29 @@ export default function TrainingClient() {
   const [issuingCert, setIssuingCert] = useState(false);
   const [certSuccess, setCertSuccess] = useState(false);
 
-  // Removed old SVG download — now using PDF via CertificateDownload component
-  const downloadCertificateSVG_UNUSED = (fullName: string, hash: string, issuedAt: string) => {
-    const formattedDate = new Date(issuedAt).toLocaleDateString();
-    const svgContent = `
-<svg viewBox="0 0 800 600" width="800" height="600" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="800" height="600" fill="#070B13" />
-  <rect x="15" y="15" width="770" height="570" rx="6" stroke="#f59e0b" strokeWidth="2" />
-  <rect x="25" y="25" width="750" height="550" rx="4" stroke="#1e293b" strokeWidth="1" />
-  <rect x="28" y="28" width="744" height="544" rx="3" stroke="#f59e0b" strokeWidth="0.5" strokeDasharray="6,4" />
-  
-  <path d="M 20 50 L 50 20 M 20 60 L 60 20 M 20 70 L 70 20" stroke="#f59e0b" strokeWidth="1.5" opacity="0.6" />
-  <path d="M 780 50 L 750 20 M 780 60 L 740 20 M 780 70 L 730 20" stroke="#f59e0b" strokeWidth="1.5" opacity="0.6" />
-  <path d="M 20 550 L 50 580 M 20 540 L 60 580 M 20 530 L 70 580" stroke="#f59e0b" strokeWidth="1.5" opacity="0.6" />
-  <path d="M 780 550 L 750 580 M 780 540 L 740 580 M 780 530 L 730 580" stroke="#f59e0b" strokeWidth="1.5" opacity="0.6" />
+  // Calendar State
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  <circle cx="400" cy="300" r="140" stroke="#f59e0b" strokeWidth="1" strokeOpacity="0.03" />
-  <circle cx="400" cy="300" r="120" stroke="#3b82f6" strokeWidth="1" strokeOpacity="0.02" />
-  
-  <text x="400" y="80" fill="#f59e0b" fontSize="11" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle" letterSpacing="4">HEALIX BIOLABS ACADEMY OF BIOMEDICAL SCIENCES</text>
-  <line x1="300" y1="95" x2="500" y2="95" stroke="#f59e0b" strokeWidth="1" strokeOpacity="0.5" />
-  
-  <text x="400" y="150" fill="#ffffff" fontSize="30" fontWeight="900" fontFamily="serif" textAnchor="middle" letterSpacing="1">OFFICIAL CERTIFICATE OF COMPLETION</text>
-  <text x="400" y="185" fill="#94a3b8" fontSize="14" fontFamily="serif" fontStyle="italic" textAnchor="middle">This professional credential is formally awarded to</text>
-  
-  <text x="400" y="245" fill="#f59e0b" fontSize="36" fontWeight="bold" fontFamily="serif" textAnchor="middle" letterSpacing="1">${fullName}</text>
-  <line x1="200" y1="265" x2="600" y2="265" stroke="#f59e0b" strokeWidth="1.5" />
-  
-  <text x="400" y="305" fill="#e2e8f0" fontSize="12" fontFamily="sans-serif" textAnchor="middle">for outstanding completion of the specialized curriculum in</text>
-  <text x="400" y="330" fill="#3b82f6" fontSize="16" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle" letterSpacing="1">ADVANCED BIOMEDICAL RESEARCH METHODOLOGIES</text>
-  
-  <text x="400" y="365" fill="#94a3b8" fontSize="10.5" fontFamily="sans-serif" textAnchor="middle">Demonstrating competency in: Scientific Inquiry Paradigms • Reference Metadata Formatting (BibTeX)</text>
-  <text x="400" y="385" fill="#94a3b8" fontSize="10.5" fontFamily="sans-serif" textAnchor="middle">Biosafety Containment (BSL-2 Guidelines) • PCR Genomic Amplification Protocols • Translational Ethics (ICMR Standards)</text>
+  // Override body color scheme to clean light-theme on mount, and restore on unmount
+  useEffect(() => {
+    const originalBg = document.body.style.backgroundColor;
+    const originalColor = document.body.style.color;
 
-  <g transform="translate(100, 430)">
-    <line x1="0" y1="40" x2="180" y2="40" stroke="#475569" strokeWidth="1" />
-    <text x="90" y="25" fill="#3b82f6" fontSize="20" fontFamily="cursive, Georgia, serif" textAnchor="middle" fontStyle="italic">Priya Sharma</text>
-    <text x="90" y="55" fill="#e2e8f0" fontSize="10" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle">DR. PRIYA SHARMA, PHD</text>
-    <text x="90" y="68" fill="#64748b" fontSize="8.5" fontFamily="sans-serif" textAnchor="middle">Chief Scientific Officer, Healix</text>
-  </g>
-  
-  <g transform="translate(400, 440)">
-    <path d="M -15 20 L -25 70 L 0 55 L 25 70 L 15 20 Z" fill="#d97706" opacity="0.8" />
-    <path d="M -5 20 L -10 80 L 10 70 L 30 80 L 15 20 Z" fill="#b45309" opacity="0.9" />
-    <circle cx="0" cy="0" r="32" fill="#d97706" stroke="#f59e0b" strokeWidth="2" />
-    <circle cx="0" cy="0" r="28" fill="#b45309" stroke="#f59e0b" strokeWidth="0.5" strokeDasharray="3,2" />
-    <text x="0" y="8" fill="#f59e0b" fontSize="24" textAnchor="middle">★</text>
-  </g>
+    document.body.style.backgroundColor = "#F8FAFC";
+    document.body.style.color = "#0F172A";
 
-  <g transform="translate(520, 430)">
-    <line x1="0" y1="40" x2="180" y2="40" stroke="#475569" strokeWidth="1" />
-    <text x="90" y="25" fill="#3b82f6" fontSize="20" fontFamily="cursive, Georgia, serif" textAnchor="middle" fontStyle="italic">Avnish Verma</text>
-    <text x="90" y="55" fill="#e2e8f0" fontSize="10" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle">DR. AVNISH VERMA, PHD</text>
-    <text x="90" y="68" fill="#64748b" fontSize="8.5" fontFamily="sans-serif" textAnchor="middle">Director of Research, BioLabs</text>
-  </g>
+    // Load custom goal if any
+    const savedGoal = localStorage.getItem("healix_academy_career_goal");
+    if (savedGoal) {
+      setCareerGoal(savedGoal);
+      setGoalInput(savedGoal);
+    }
 
-  <line x1="50" y1="525" x2="750" y2="525" stroke="#1e293b" strokeWidth="1" />
-  
-  <text x="80" y="548" fill="#64748b" fontSize="9" fontFamily="sans-serif" textAnchor="start">ISSUED DATE: ${formattedDate}</text>
-  <text x="400" y="548" fill="#64748b" fontSize="8.5" fontFamily="monospace" textAnchor="middle">VERIFICATION HASH: ${hash}</text>
-  <text x="720" y="548" fill="#64748b" fontSize="9" fontFamily="sans-serif" textAnchor="end">SYSTEM STATUS: VERIFIED</text>
-</svg>
-`.trim();
-
-    const blob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `healix_biolabs_certificate_${fullName.replace(/\s+/g, "_")}.svg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
+    return () => {
+      document.body.style.backgroundColor = originalBg;
+      document.body.style.color = originalColor;
+    };
+  }, []);
 
   useEffect(() => {
     fetchStatus();
@@ -286,14 +260,12 @@ export default function TrainingClient() {
 
   const fetchStatus = async () => {
     try {
-      // First fetch session info to check authentication
       const userRes = await fetch("/api/auth/session");
       if (userRes.ok) {
         const userData = await userRes.json();
         if (userData.user) {
           setUser(userData.user);
           
-          // Fetch training progress
           const statusRes = await fetch("/api/training/status");
           if (statusRes.ok) {
             const data = await statusRes.json();
@@ -409,15 +381,52 @@ export default function TrainingClient() {
     }
   };
 
+  const saveGoal = () => {
+    setCareerGoal(goalInput);
+    localStorage.setItem("healix_academy_career_goal", goalInput);
+    setIsEditingGoal(false);
+  };
+
   const completedCount = Object.values(progress).filter(Boolean).length;
   const progressPercent = Math.round((completedCount / MODULES.length) * 100);
 
+  // Dynamic Greeting based on Local Time
+  const getGreeting = () => {
+    const hr = currentDate.getHours();
+    if (hr < 12) return "Good morning";
+    if (hr < 17) return "Good afternoon";
+    return "Good evening";
+  };
+
+  // Calendar computation helper
+  const getCalendarDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDayIndex = new Date(year, month, 1).getDay(); // 0=Sunday
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    
+    // Shift index so Monday is 0 and Sunday is 6
+    const firstDay = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+
+    const days: (number | null)[] = [];
+    for (let i = 0; i < firstDay; i++) {
+      days.push(null);
+    }
+    for (let i = 1; i <= totalDays; i++) {
+      days.push(i);
+    }
+    return days;
+  };
+
+  const calendarDays = getCalendarDays();
+  const currentMonthName = currentDate.toLocaleString("default", { month: "long" });
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070B13] flex items-center justify-center text-slate-300">
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center text-slate-600">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-12 h-12 border-4 border-accent-blue border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-mono uppercase tracking-wider text-slate-400">Loading Academy Status...</p>
+          <p className="text-xs font-mono uppercase tracking-wider text-slate-500 font-bold">Loading Academy Status...</p>
         </div>
       </div>
     );
@@ -425,269 +434,559 @@ export default function TrainingClient() {
 
   if (!user) {
     return (
-      <div className="relative min-h-screen bg-background flex flex-col justify-between overflow-x-hidden">
-        {/* Scientific SVG Animated Canvas */}
-        <ScientificBackground />
-
-        {/* Navbar Navigation */}
+      <div className="relative min-h-screen bg-[#F8FAFC] flex flex-col justify-between overflow-x-hidden">
         <Navbar currentUser={null} />
 
         <main className="flex-grow pt-28 pb-16 flex items-center justify-center px-4">
-          <div className="max-w-md w-full border border-slate-800 bg-[#0B0F19]/90 rounded-2xl p-8 text-center space-y-6 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-accent-blue to-purple-600" />
+          <div className="max-w-md w-full border border-slate-200 bg-white rounded-3xl p-8 text-center space-y-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-violet-600 via-accent-blue to-teal-500" />
             <Award className="w-16 h-16 text-amber-500/80 mx-auto animate-bounce" />
             <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-white">Access Research Academy</h2>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-slate-900">Access Research Academy</h2>
+              <p className="text-xs text-slate-500 leading-relaxed">
                 You must initialize your BioLabs credentials or log in to track module progress and earn credentials.
               </p>
             </div>
             <div className="pt-2">
               <Link
                 href="/login?redirect=/training"
-                className="w-full block bg-accent-blue hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-md"
+                className="w-full block bg-accent-blue hover:bg-blue-600 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-md cursor-pointer"
               >
                 Log In to Academy
               </Link>
             </div>
-            <Link href="/" className="inline-flex items-center space-x-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors">
+            <Link href="/" className="inline-flex items-center space-x-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Return to Homepage</span>
             </Link>
           </div>
         </main>
 
-        {/* Footer Details */}
         <Footer />
       </div>
     );
   }
 
-  return (
-    <div className="relative min-h-screen bg-background flex flex-col justify-between overflow-x-hidden">
-      {/* Scientific SVG Animated Canvas */}
-      <ScientificBackground />
+  // Filter modules based on active tab
+  const inProgressModules = MODULES.filter(m => !progress[m.index]);
+  const completedModules = MODULES.filter(m => progress[m.index]);
 
-      {/* Navbar Navigation */}
+  const initials = (user.name || user.email || "?")
+    .split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="relative min-h-screen bg-[#F8FAFC] flex flex-col justify-between overflow-x-hidden text-slate-700">
+      
+      {/* Navbar */}
       <Navbar currentUser={user} />
 
-      <main className="flex-grow pt-28 pb-16 text-slate-300 relative">
-        <div className="max-w-[1450px] mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
-        
-        {/* Breadcrumb back navigation */}
-        <div className="flex justify-start">
-          <Link href="/" className="inline-flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white uppercase tracking-wider font-bold transition-colors">
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Hub</span>
-          </Link>
-        </div>
-
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-900">
-          <div className="text-left">
-            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-900/60 border border-slate-800 text-[10px] font-bold text-accent-blue uppercase tracking-widest mb-3">
-              <Award className="w-3 h-3 text-accent-blue" />
-              <span>BioLabs Education</span>
-            </div>
-            <h2 className="text-2xl sm:text-4.5xl font-heading font-extrabold text-slate-100 uppercase leading-none">
-              Research Academy
-            </h2>
-            <p className="text-xs text-slate-400 mt-2 max-w-xl leading-relaxed font-medium">
-              Complete our structured curriculum on inquiry paradigms, citation rules, laboratory safety containment, and clinical ethics to unlock your credentials.
-            </p>
-          </div>
-          <Link
-            href="/training/verify"
-            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900/60 hover:bg-slate-900 text-slate-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-all"
-          >
-            <span>Verify Credential</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-          </Link>
-        </div>
-
-        {/* Dashboard Progress Tracker Banner */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch">
+      <main className="flex-grow pt-28 pb-16">
+        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           
-          {/* Progress Card */}
-          <div className="md:col-span-4 border border-slate-800 bg-[#0B0F19]/60 backdrop-blur-md rounded-2xl p-6 flex flex-col justify-between relative shadow-inner">
-            <div className="space-y-4 text-left">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">Academic Progress</span>
-              <div className="space-y-1">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-3xl font-heading font-black text-white">{progressPercent}%</span>
-                  <span className="text-xs text-slate-400 font-mono font-bold">{completedCount} of 4 Modules Passed</span>
-                </div>
-                {/* Progress bar */}
-                <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-accent-blue to-teal-500 transition-all duration-500" 
-                    style={{ width: `${progressPercent}%` }}
-                  />
+          {/* ============================================================== */}
+          {/* SECTION 1 — HEADER GREETING & CAREER GOALS (COURSERA STYLE) */}
+          {/* ============================================================== */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-200">
+            <div className="flex items-start gap-4 text-left w-full md:w-auto">
+              {/* Profile Avatar circle */}
+              <div className="w-16 h-16 rounded-full bg-blue-900 text-white flex items-center justify-center font-bold text-xl shrink-0 shadow-inner">
+                {initials}
+              </div>
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl font-heading font-black text-slate-900 tracking-tight">
+                  {getGreeting()}, {user.name || user.email.split("@")[0]}
+                </h1>
+                
+                {/* Career Goals */}
+                <div className="text-xs text-slate-500 font-semibold leading-relaxed flex flex-wrap items-center gap-1">
+                  <span>Your career goal is to become a</span>
+                  {isEditingGoal ? (
+                    <div className="inline-flex items-center gap-1.5 mt-0.5">
+                      <input 
+                        type="text" 
+                        value={goalInput}
+                        onChange={(e) => setGoalInput(e.target.value)}
+                        className="bg-white border border-slate-300 rounded px-2 py-0.5 text-xs text-slate-800 font-bold focus:outline-none focus:border-accent-blue"
+                      />
+                      <button 
+                        onClick={saveGoal}
+                        className="bg-accent-blue text-white px-2 py-0.5 rounded text-[10px] font-bold hover:bg-blue-600"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <strong className="text-slate-800 underline decoration-slate-400 font-bold">
+                        {careerGoal}
+                      </strong>
+                      <span>. Academic / Guidance Counselor, Healthcare, or 2 more</span>
+                      <button 
+                        onClick={() => setIsEditingGoal(true)}
+                        className="text-accent-blue hover:text-blue-600 ml-1 inline-flex items-center gap-0.5 font-bold cursor-pointer"
+                      >
+                        Edit goal
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
-                {progressPercent === 100 
-                  ? "Congratulations! You have completed all curriculum modules and are eligible to claim your certificate."
-                  : "Study each module slide deck, pass the mandatory checkup quizzes with a score of 100% to qualify for certification."
-                }
-              </p>
             </div>
-            
-            {progressPercent === 100 && !certificate && (
-              <button
-                onClick={handleClaimCertificate}
-                disabled={issuingCert}
-                className="mt-6 w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-amber-500/10 cursor-pointer disabled:opacity-50"
-              >
-                {issuingCert ? "Generating Certificate..." : "Claim Certificate of Completion"}
-              </button>
-            )}
+
+            {/* Arched pathway vector illustration exactly like the Coursera layout */}
+            <div className="hidden md:block shrink-0 select-none">
+              <svg width="240" height="110" viewBox="0 0 240 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Background Hill */}
+                <path d="M-20 120 C 60 70, 180 80, 260 120 Z" fill="#EEF2F6" />
+                <path d="M30 120 C 110 55, 200 60, 280 120 Z" fill="#E2E8F0" />
+                
+                {/* Winding Stairway Path */}
+                <path d="M 60 110 L 80 98 L 110 98 L 130 84 L 150 84 L 170 70 L 190 70" stroke="#C7D2FE" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M 60 110 L 80 98 L 110 98 L 130 84 L 150 84 L 170 70 L 190 70" stroke="#818CF8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3,3" />
+
+                {/* Arched Doorway / Portal */}
+                <g transform="translate(180, 42)">
+                  {/* Door Shadow */}
+                  <rect x="0" y="0" width="22" height="34" rx="11" fill="#FEE2E2" />
+                  {/* Outer Frame */}
+                  <rect x="2" y="0" width="18" height="32" rx="9" fill="#F59E0B" />
+                  {/* Inner Glowing doorway */}
+                  <rect x="4.5" y="3" width="13" height="29" rx="6.5" fill="#FEF3C7" />
+                  {/* Small stairs platform inside */}
+                  <path d="M 4.5 24 L 17.5 24" stroke="#D97706" strokeWidth="2" />
+                  <path d="M 4.5 28 L 17.5 28" stroke="#D97706" strokeWidth="2" />
+                </g>
+
+                {/* Trees (Cone pine style) */}
+                {/* Tree 1 */}
+                <g transform="translate(25, 68)">
+                  <rect x="5.5" y="18" width="3" height="10" rx="1" fill="#78350F" />
+                  <polygon points="7,0 0,18 14,18" fill="#10B981" />
+                  <polygon points="7,4 2,14 12,14" fill="#34D399" />
+                </g>
+                {/* Tree 2 */}
+                <g transform="translate(152, 54)">
+                  <rect x="4.5" y="14" width="2" height="8" rx="1" fill="#78350F" />
+                  <polygon points="5.5,0 0,14 11,14" fill="#059669" />
+                  <polygon points="5.5,3 1.5,11 9.5,11" fill="#10B981" />
+                </g>
+                {/* Tree 3 */}
+                <g transform="translate(215, 64)">
+                  <rect x="5.5" y="18" width="3" height="10" rx="1" fill="#78350F" />
+                  <polygon points="7,0 0,18 14,18" fill="#10B981" />
+                  <polygon points="7,4 2,14 12,14" fill="#34D399" />
+                </g>
+
+                {/* Small circular path flag */}
+                <circle cx="60" cy="110" r="5" fill="#4338CA" />
+                <circle cx="60" cy="110" r="2.5" fill="#FBBF24" />
+              </svg>
+            </div>
           </div>
 
-          {/* Certificate Showcase Card */}
-          <div className="md:col-span-8 border border-slate-800 bg-[#0B0F19]/60 backdrop-blur-md rounded-2xl overflow-hidden shadow-lg min-h-[220px]">
-            {certificate ? (
-              <div className="flex flex-col h-full">
-                {/* Certificate Preview Scaled */}
-                <div className="relative w-full bg-[#04091a] overflow-hidden" style={{ paddingBottom: "32%" }}>
-                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                    <div style={{ transform: "scale(0.256)", transformOrigin: "center center", width: "1122px", position: "absolute" }}>
-                      <CertificatePreview
-                        fullName={certificate.fullName}
-                        certHash={certificate.certHash}
-                        issuedAt={certificate.issuedAt}
-                      />
-                    </div>
-                  </div>
-                  {/* Glow overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-transparent pointer-events-none" />
-                </div>
+          {/* ============================================================== */}
+          {/* SECTION 2 — HORIZONTAL TABS (IN PROGRESS, COMPLETED, CERTIFICATES) */}
+          {/* ============================================================== */}
+          <div className="flex border-b border-slate-200 gap-6 text-xs font-semibold">
+            <button
+              onClick={() => setActiveTab("progress")}
+              className={`pb-3 border-b-2 transition-all cursor-pointer ${
+                activeTab === "progress"
+                  ? "text-slate-900 border-[#0F172A] font-extrabold"
+                  : "text-slate-400 border-transparent hover:text-slate-600"
+              }`}
+            >
+              In Progress
+            </button>
+            <button
+              onClick={() => setActiveTab("completed")}
+              className={`pb-3 border-b-2 transition-all cursor-pointer ${
+                activeTab === "completed"
+                  ? "text-slate-900 border-[#0F172A] font-extrabold"
+                  : "text-slate-400 border-transparent hover:text-slate-600"
+              }`}
+            >
+              Completed
+            </button>
+            <button
+              onClick={() => setActiveTab("certificates")}
+              className={`pb-3 border-b-2 transition-all cursor-pointer ${
+                activeTab === "certificates"
+                  ? "text-slate-900 border-[#0F172A] font-extrabold"
+                  : "text-slate-400 border-transparent hover:text-slate-600"
+              }`}
+            >
+              Certificates
+            </button>
+          </div>
 
-                {/* Info + Actions */}
-                <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-slate-900">
-                  <div className="space-y-1.5">
-                    <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest font-mono flex items-center space-x-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>Verified Credential — Active</span>
-                    </span>
-                    <h3 className="text-base font-heading font-extrabold text-white uppercase leading-none">Certificate of Completion</h3>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <div className="px-2.5 py-1 rounded-md border border-slate-800 bg-slate-950 font-mono text-[9px] font-bold text-amber-500 select-all tracking-wider shadow-inner truncate max-w-[220px]">
-                        {certificate.certHash}
+          {/* ============================================================== */}
+          {/* SECTION 3 — DOUBLE COLUMN WORKSPACE */}
+          {/* ============================================================== */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* ── Left Column: Course Cards or Certificate Showcase (8 cols) ── */}
+            <div className="lg:col-span-8 space-y-4">
+              
+              {/* TAB 1: IN PROGRESS */}
+              {activeTab === "progress" && (
+                <>
+                  {inProgressModules.map((mod) => (
+                    <div 
+                      key={mod.index}
+                      className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs flex flex-col md:flex-row items-stretch justify-between gap-6 hover:shadow-md hover:border-slate-300 transition-all duration-300 text-left"
+                    >
+                      {/* Left: Provider, Course Title, Progress Bar */}
+                      <div className="flex-1 space-y-3 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <span className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-500 shrink-0">
+                            🎓
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{mod.provider}</span>
+                        </div>
+                        <h3 className="text-base font-bold font-heading text-slate-900 leading-snug">
+                          {mod.title}
+                        </h3>
+                        <p className="text-[10px] text-slate-400 font-semibold">
+                          Course • 0% complete • Estimated completion: {mod.estCompletion}
+                        </p>
+                        {/* Progress Bar */}
+                        <div className="w-full max-w-[260px] bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200 mt-2">
+                          <div className="bg-violet-600 h-full w-[2%]" />
+                        </div>
+                      </div>
+
+                      {/* Middle: Next task information */}
+                      <div className="flex-1 md:border-l md:border-slate-100 md:pl-6 flex flex-col justify-center text-left">
+                        <p className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">{mod.nextTask}</p>
+                        <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-1 font-mono">
+                          <Play className="w-3 h-3 text-slate-400" /> {mod.duration}
+                        </p>
+                      </div>
+
+                      {/* Right: Resume button & Actions */}
+                      <div className="flex items-center justify-between md:justify-end gap-4 shrink-0">
+                        <button
+                          onClick={() => handleStartModule(mod)}
+                          className="bg-accent-blue hover:bg-blue-600 text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all cursor-pointer shadow-xs"
+                        >
+                          Resume
+                        </button>
+                        <button className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+                          <MoreVertical className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2.5 flex-shrink-0">
-                    <Link
-                      href={`/training/verify?hash=${certificate.certHash}`}
-                      className="px-3.5 py-2.5 rounded-lg border border-slate-800 hover:border-accent-blue/50 bg-slate-900/60 hover:bg-slate-900 text-slate-300 hover:text-white text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1.5 transition-all"
+                  ))}
+
+                  {inProgressModules.length === 0 && (
+                    <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-12 text-center space-y-4">
+                      <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto" />
+                      <div>
+                        <h4 className="text-base font-bold text-slate-800">All modules completed!</h4>
+                        <p className="text-xs text-slate-500 mt-1">
+                          You have completed the entire curriculum. Head over to the Certificates tab to claim your reward.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* TAB 2: COMPLETED */}
+              {activeTab === "completed" && (
+                <>
+                  {completedModules.map((mod) => (
+                    <div 
+                      key={mod.index}
+                      className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs flex flex-col md:flex-row items-stretch justify-between gap-6 hover:shadow-md hover:border-slate-300 transition-all duration-300 text-left"
                     >
-                      <FileCheck2 className="w-3.5 h-3.5 text-accent-blue" />
-                      <span>Verify</span>
-                    </Link>
-                    <button
-                      onClick={() => downloadCertificateAsPDF(certificate.fullName, certificate.certHash, certificate.issuedAt)}
-                      className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1.5 cursor-pointer transition-all shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30"
+                      {/* Left: Provider, Course Title, Progress Bar */}
+                      <div className="flex-1 space-y-3 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <span className="w-6 h-6 rounded bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[8px] font-bold text-emerald-600 shrink-0">
+                            ✓
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{mod.provider}</span>
+                        </div>
+                        <h3 className="text-base font-bold font-heading text-slate-900 leading-snug">
+                          {mod.title}
+                        </h3>
+                        <p className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+                          <span className="text-emerald-500">✓ 100% complete</span> • Passed
+                        </p>
+                        {/* Progress Bar */}
+                        <div className="w-full max-w-[260px] bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200 mt-2">
+                          <div className="bg-emerald-500 h-full w-full" />
+                        </div>
+                      </div>
+
+                      {/* Middle: Review info */}
+                      <div className="flex-1 md:border-l md:border-slate-100 md:pl-6 flex flex-col justify-center text-left">
+                        <p className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">Review Course Slides</p>
+                        <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-1 font-mono">
+                          <FileText className="w-3 h-3 text-slate-400" /> Study Material (15 minutes)
+                        </p>
+                      </div>
+
+                      {/* Right: Review button & Actions */}
+                      <div className="flex items-center justify-between md:justify-end gap-4 shrink-0">
+                        <button
+                          onClick={() => handleStartModule(mod)}
+                          className="border border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-55 hover:text-slate-900 font-bold text-xs px-6 py-2.5 rounded-xl transition-all cursor-pointer shadow-xs"
+                        >
+                          Review
+                        </button>
+                        <button className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+                          <MoreVertical className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {completedModules.length === 0 && (
+                    <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-12 text-center space-y-4">
+                      <Lock className="w-12 h-12 text-slate-300 mx-auto" />
+                      <div>
+                        <h4 className="text-base font-bold text-slate-800">No completed courses yet</h4>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Complete slides and score 100% on checkup exams to list modules here.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* TAB 3: CERTIFICATES */}
+              {activeTab === "certificates" && (
+                <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-md text-left">
+                  {certificate ? (
+                    <div className="flex flex-col">
+                      {/* Certificate Preview Scaled */}
+                      <div className="relative w-full bg-[#04091a] overflow-hidden" style={{ paddingBottom: "32%" }}>
+                        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                          <div style={{ transform: "scale(0.256)", transformOrigin: "center center", width: "1122px", position: "absolute" }}>
+                            <CertificatePreview
+                              fullName={certificate.fullName}
+                              certHash={certificate.certHash}
+                              issuedAt={certificate.issuedAt}
+                            />
+                          </div>
+                        </div>
+                        {/* Glow overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent pointer-events-none" />
+                      </div>
+
+                      {/* Info + Actions */}
+                      <div className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-slate-100">
+                        <div className="space-y-1.5">
+                          <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest font-mono flex items-center space-x-1">
+                            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                            <span>Verified Credential — Active</span>
+                          </span>
+                          <h3 className="text-base font-heading font-extrabold text-slate-900 uppercase leading-none">Certificate of Completion</h3>
+                          <div className="flex items-center space-x-2 mt-1.5">
+                            <div className="px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 font-mono text-[9px] font-bold text-amber-600 select-all tracking-wider shadow-inner truncate max-w-[220px]">
+                              {certificate.certHash}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
+                          <Link
+                            href={`/training/verify?hash=${certificate.certHash}`}
+                            className="flex-1 sm:flex-none text-center px-4 py-2.5 rounded-lg border border-slate-200 hover:border-accent-blue/50 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 transition-all"
+                          >
+                            <FileCheck2 className="w-3.5 h-3.5 text-accent-blue" />
+                            <span>Verify Portal</span>
+                          </Link>
+                          <button
+                            onClick={() => downloadCertificateAsPDF(certificate.fullName, certificate.certHash, certificate.issuedAt)}
+                            className="flex-1 sm:flex-none px-5 py-2.5 rounded-lg bg-accent-blue hover:bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 cursor-pointer transition-all shadow-sm"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download PDF</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-10 flex flex-col items-center justify-center text-center space-y-6 max-w-lg mx-auto">
+                      <div className="w-14 h-14 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center">
+                        <Award className="w-7 h-7 text-slate-400" />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-heading font-extrabold text-slate-800 uppercase tracking-wider">Credential Locked</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Complete all 4 training modules and score 100% on their exams to unlock your credential.
+                        </p>
+                      </div>
+
+                      {progressPercent === 100 ? (
+                        <button
+                          onClick={handleClaimCertificate}
+                          disabled={issuingCert}
+                          className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer disabled:opacity-50"
+                        >
+                          {issuingCert ? "Generating Certificate..." : "Claim Certificate of Completion"}
+                        </button>
+                      ) : (
+                        <div className="w-full space-y-2">
+                          <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                            <span>Syllabus Completion</span>
+                            <span>{progressPercent}%</span>
+                          </div>
+                          <div className="h-2 w-full bg-slate-100 border border-slate-200 rounded-full overflow-hidden">
+                            <div className="bg-violet-600 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+
+            {/* ── Right Column: Calendar & Stats (4 cols) ── */}
+            <div className="lg:col-span-4 space-y-6">
+              
+              {/* Calendar Widget */}
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs text-left">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs font-bold font-heading text-slate-900 uppercase tracking-wider">
+                    {currentMonthName} {currentDate.getFullYear()}
+                  </h3>
+                  <div className="flex space-x-1">
+                    <button 
+                      onClick={() => {
+                        const newDate = new Date(currentDate);
+                        newDate.setMonth(newDate.getMonth() - 1);
+                        setCurrentDate(newDate);
+                      }}
+                      className="p-1 hover:bg-slate-100 rounded cursor-pointer text-slate-400 hover:text-slate-700"
                     >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Download PDF</span>
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const newDate = new Date(currentDate);
+                        newDate.setMonth(newDate.getMonth() + 1);
+                        setCurrentDate(newDate);
+                      }}
+                      className="p-1 hover:bg-slate-100 rounded cursor-pointer text-slate-400 hover:text-slate-700"
+                    >
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center space-y-4 max-w-sm mx-auto h-full min-h-[220px]">
-                <div className="w-14 h-14 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
-                  <Award className="w-7 h-7 text-slate-600" />
+
+                {/* Calendar Days of Week */}
+                <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-2 font-mono">
+                  <span>Mo</span>
+                  <span>Tu</span>
+                  <span>We</span>
+                  <span>Th</span>
+                  <span>Fr</span>
+                  <span>Sa</span>
+                  <span>Su</span>
                 </div>
-                <div className="space-y-1.5">
-                  <h4 className="text-sm font-heading font-extrabold text-slate-400 uppercase tracking-wider">Credential Showcase Locked</h4>
-                  <p className="text-[10px] text-slate-500 leading-relaxed">
-                    Complete all 4 training modules and score 100% on their quizzes to unlock your official credential.
-                  </p>
+
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold">
+                  {calendarDays.map((day, idx) => {
+                    const isToday = day === new Date().getDate() && 
+                                    currentDate.getMonth() === new Date().getMonth() && 
+                                    currentDate.getFullYear() === new Date().getFullYear();
+                    return (
+                      <div 
+                        key={idx} 
+                        className="h-7 flex items-center justify-center relative"
+                      >
+                        {day && (
+                          <span className={`w-7 h-7 flex items-center justify-center rounded-full leading-none ${
+                            isToday 
+                              ? "border-2 border-violet-600 font-extrabold text-violet-700" 
+                              : "text-slate-700 hover:bg-slate-100 cursor-pointer"
+                          }`}>
+                            {day}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Calendar Legend */}
+                <div className="flex items-center gap-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-4 pt-3 border-t border-slate-100 font-mono">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-violet-600" />
+                    1+ daily goals
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    All daily goals
+                  </span>
                 </div>
               </div>
-            )}
+
+              {/* Stats Widget */}
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs text-left space-y-4">
+                <div>
+                  <h3 className="text-xs font-bold font-heading text-slate-900 uppercase tracking-wider">
+                    Last 4 weeks
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Activity Record</p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="space-y-1">
+                    <p className="text-2xl font-black font-heading text-slate-900 leading-none">{completedCount}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-tight">Daily goals completed</p>
+                  </div>
+                  <div className="space-y-1 border-l border-slate-100">
+                    <p className="text-2xl font-black font-heading text-slate-900 leading-none">{completedCount}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-tight">Items completed</p>
+                  </div>
+                  <div className="space-y-1 border-l border-slate-100">
+                    <p className="text-2xl font-black font-heading text-slate-900 leading-none">{completedCount * 15}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-tight">Minutes learned</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
           </div>
 
         </div>
+      </main>
 
-        {/* Modules Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-          {MODULES.map((mod) => {
-            const isCompleted = !!progress[mod.index];
-            return (
-              <div 
-                key={mod.index}
-                className={`border rounded-2xl p-6 flex flex-col justify-between gap-6 shadow-md transition-all ${
-                  isCompleted 
-                    ? "border-emerald-500/10 bg-[#0c1a17]/50 shadow-emerald-500/2" 
-                    : "border-slate-800 bg-[#0B0F19]/45 hover:border-slate-800"
-                }`}
-              >
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">Module 0{mod.index + 1}</span>
-                    {isCompleted ? (
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-0.5">
-                        <CheckCircle className="w-3 h-3 text-emerald-400" />
-                        <span>Passed</span>
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-[8px] font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-0.5">
-                        <Lock className="w-2.5 h-2.5 text-slate-500" />
-                        <span>Incomplete</span>
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-lg font-heading font-extrabold text-slate-100 uppercase tracking-tight leading-snug">
-                    {mod.title}
-                  </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                    {mod.description}
-                  </p>
-                </div>
+      {/* Footer */}
+      <Footer />
 
-                <div className="flex items-center justify-between border-t border-slate-900/60 pt-4">
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider font-mono flex items-center space-x-1">
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>4 Study Slides</span>
-                  </span>
-                  
-                  <button
-                    onClick={() => handleStartModule(mod)}
-                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
-                      isCompleted 
-                        ? "border border-emerald-500/20 hover:bg-emerald-950/20 text-emerald-400" 
-                        : "bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800"
-                    }`}
-                  >
-                    {isCompleted ? "Review Slides" : "Start Module"}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-      </div>
-
-      {/* DETAILED SLIDESHOW VIEW MODAL OVERLAY */}
+      {/* ============================================================== */}
+      {/* SLIDESHOW / QUIZ VIEWER MODAL OVERLAY */}
+      {/* ============================================================== */}
       {activeModule && (
-        <div className="fixed inset-0 z-50 bg-[#070b13]/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full border border-slate-800 bg-[#0B0F19] rounded-2xl shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[420px] max-h-[90vh]">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full border border-slate-200 bg-white rounded-3xl shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[440px] max-h-[90vh] text-slate-700">
             
             {/* Header top bar */}
-            <div className="p-4 sm:p-5 border-b border-slate-900/60 flex items-center justify-between">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div className="text-left">
                 <span className="text-[9px] font-bold text-accent-blue uppercase tracking-widest font-mono">Module 0{activeModule.index + 1} Course Material</span>
-                <h3 className="text-sm sm:text-base font-heading font-extrabold text-white uppercase tracking-tight leading-none mt-1">
+                <h3 className="text-base font-heading font-extrabold text-slate-950 uppercase tracking-tight leading-none mt-1">
                   {activeModule.title}
                 </h3>
               </div>
               <button 
                 onClick={() => setActiveModule(null)}
-                className="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer transition-colors"
+                className="w-8 h-8 rounded-lg hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -699,15 +998,15 @@ export default function TrainingClient() {
                 /* STUDY SLIDES PANEL */
                 <div className="space-y-6 max-w-lg mx-auto">
                   <div className="space-y-2 text-center">
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono block">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
                       Slide {activeSlideIdx + 1} of {activeModule.slides.length}
                     </span>
-                    <h4 className="text-base sm:text-xl font-heading font-extrabold text-white uppercase tracking-tight leading-snug">
+                    <h4 className="text-base sm:text-xl font-heading font-extrabold text-slate-900 uppercase tracking-tight leading-snug">
                       {activeModule.slides[activeSlideIdx].title}
                     </h4>
                   </div>
                   
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed text-justify font-medium px-4">
+                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed text-justify font-medium px-4">
                     {activeModule.slides[activeSlideIdx].content}
                   </p>
                 </div>
@@ -715,16 +1014,16 @@ export default function TrainingClient() {
                 /* QUIZ MULTIPLE CHOICE PANEL */
                 <div className="space-y-6 max-w-lg mx-auto w-full">
                   <div className="text-center space-y-1">
-                    <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest font-mono block animate-pulse">Knowledge Verification</span>
-                    <h4 className="text-base sm:text-lg font-heading font-extrabold text-white uppercase leading-none">Module 0{activeModule.index + 1} Checkup Quiz</h4>
+                    <span className="text-[9px] font-bold text-amber-600 uppercase tracking-widest font-mono block animate-pulse">Knowledge Verification</span>
+                    <h4 className="text-base sm:text-lg font-heading font-extrabold text-slate-900 uppercase leading-none">Module 0{activeModule.index + 1} Checkup Quiz</h4>
                   </div>
 
                   {quizSuccess ? (
-                    <div className="p-6 border border-emerald-500/10 bg-emerald-950/20 rounded-xl space-y-4 text-center">
+                    <div className="p-6 border border-emerald-100 bg-emerald-50 rounded-2xl space-y-4 text-center">
                       <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto" />
                       <div className="space-y-1">
-                        <h4 className="text-sm font-bold text-white uppercase tracking-wider">Module Exam Passed!</h4>
-                        <p className="text-[10px] text-slate-400 leading-relaxed">
+                        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Module Exam Passed!</h4>
+                        <p className="text-[10px] text-slate-500 leading-relaxed">
                           Your score has been saved in the registry database. You can proceed to check other modules or claim credentials.
                         </p>
                       </div>
@@ -733,7 +1032,7 @@ export default function TrainingClient() {
                     <div className="space-y-5 text-left w-full">
                       {activeModule.quiz.questions.map((qObj: any, qIdx: number) => (
                         <div key={qIdx} className="space-y-2.5">
-                          <p className="text-xs font-bold text-slate-200">
+                          <p className="text-xs font-bold text-slate-800">
                             {qIdx + 1}. {qObj.q}
                           </p>
                           <div className="grid grid-cols-1 gap-2">
@@ -745,8 +1044,8 @@ export default function TrainingClient() {
                                   onClick={() => handleSelectAnswer(qIdx, optIdx)}
                                   className={`p-3 text-left text-xs rounded-xl border transition-all cursor-pointer ${
                                     isSelected 
-                                      ? "border-accent-blue bg-blue-950/25 text-white" 
-                                      : "border-slate-800 bg-slate-950/40 hover:border-slate-800 text-slate-400 hover:text-slate-300"
+                                      ? "border-accent-blue bg-blue-50/40 text-slate-900 font-semibold" 
+                                      : "border-slate-200 bg-slate-50 hover:border-slate-300 text-slate-500 hover:text-slate-700"
                                   }`}
                                 >
                                   {opt}
@@ -758,7 +1057,7 @@ export default function TrainingClient() {
                       ))}
 
                       {quizError && (
-                        <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold text-center">
+                        <div className="p-3 rounded-lg bg-rose-50/60 border border-rose-200 text-rose-700 text-[10px] font-bold text-center">
                           {quizError}
                         </div>
                       )}
@@ -769,20 +1068,20 @@ export default function TrainingClient() {
             </div>
 
             {/* Bottom slides navigation bar */}
-            <div className="p-4 sm:p-5 border-t border-slate-900/60 bg-slate-950/30 flex items-center justify-between">
+            <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
               {!showQuiz ? (
                 <>
                   <button
                     onClick={handlePrevSlide}
                     disabled={activeSlideIdx === 0}
-                    className="px-3.5 py-2 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 disabled:opacity-30 disabled:hover:bg-slate-900 cursor-pointer flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider transition-colors"
+                    className="px-3.5 py-2 rounded-lg border border-slate-200 hover:border-slate-350 bg-white text-slate-600 disabled:opacity-30 cursor-pointer flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     <span>Previous</span>
                   </button>
                   <button
                     onClick={handleNextSlide}
-                    className="px-3.5 py-2 rounded-lg bg-accent-blue hover:bg-blue-500 text-white font-bold text-[10px] uppercase tracking-wider cursor-pointer flex items-center space-x-1 transition-colors"
+                    className="px-3.5 py-2 rounded-lg bg-accent-blue hover:bg-blue-600 text-white font-bold text-[10px] uppercase tracking-wider cursor-pointer flex items-center space-x-1 transition-colors"
                   >
                     <span>{activeSlideIdx === activeModule.slides.length - 1 ? "Start Quiz" : "Next Slide"}</span>
                     <ChevronRight className="w-4 h-4" />
@@ -797,7 +1096,7 @@ export default function TrainingClient() {
                       setQuizSuccess(false);
                     }}
                     disabled={quizSuccess}
-                    className="px-3.5 py-2 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 disabled:opacity-30 cursor-pointer flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider transition-colors"
+                    className="px-3.5 py-2 rounded-lg border border-slate-200 hover:border-slate-300 bg-white text-slate-600 disabled:opacity-30 cursor-pointer flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     <span>Review Materials</span>
@@ -813,9 +1112,9 @@ export default function TrainingClient() {
                     <button
                       onClick={handleSubmitQuiz}
                       disabled={submittingQuiz}
-                      className="px-5 py-2 rounded-lg bg-accent-blue hover:bg-blue-500 text-white font-bold text-[10px] uppercase tracking-wider cursor-pointer disabled:opacity-50 transition-colors"
+                      className="px-5 py-2 rounded-lg bg-accent-blue hover:bg-blue-600 text-white font-bold text-[10px] uppercase tracking-wider cursor-pointer disabled:opacity-50 transition-colors"
                     >
-                      {submittingQuiz ? "Submitting..." : "Submit Examination"}
+                      {submittingQuiz ? "Submitting..." : "Submit Exam"}
                     </button>
                   )}
                 </>
@@ -825,9 +1124,7 @@ export default function TrainingClient() {
           </div>
         </div>
       )}
-      </main>
 
-      <Footer />
     </div>
   );
 }
