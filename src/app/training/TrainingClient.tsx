@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/navigation/Navbar";
 import Footer from "@/components/navigation/Footer";
+import ScientificBackground from "@/components/canvas/ScientificBackground";
 import { downloadCertificateAsPDF, CertificatePreview } from "@/components/ui/CertificateDownload";
 
 // Curriculum Data
@@ -207,6 +208,7 @@ export default function TrainingClient() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState<Record<number, boolean>>({});
+  const [rawProgress, setRawProgress] = useState<any[]>([]); // To store actual progress completion dates
   const [certificate, setCertificate] = useState<any>(null);
 
   // Tabs
@@ -232,26 +234,15 @@ export default function TrainingClient() {
 
   // Calendar State
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-  // Override body color scheme to clean light-theme on mount, and restore on unmount
   useEffect(() => {
-    const originalBg = document.body.style.backgroundColor;
-    const originalColor = document.body.style.color;
-
-    document.body.style.backgroundColor = "#F8FAFC";
-    document.body.style.color = "#0F172A";
-
     // Load custom goal if any
     const savedGoal = localStorage.getItem("healix_academy_career_goal");
     if (savedGoal) {
       setCareerGoal(savedGoal);
       setGoalInput(savedGoal);
     }
-
-    return () => {
-      document.body.style.backgroundColor = originalBg;
-      document.body.style.color = originalColor;
-    };
   }, []);
 
   useEffect(() => {
@@ -274,6 +265,7 @@ export default function TrainingClient() {
               progMap[p.moduleIndex] = p.isCompleted;
             });
             setProgress(progMap);
+            setRawProgress(data.progress || []); // Store raw database progress with timestamps
             setCertificate(data.certificate);
           }
         }
@@ -347,6 +339,8 @@ export default function TrainingClient() {
             ...progress,
             [activeModule.index]: true
           });
+          // Refresh list to pull actual DB timestamp
+          fetchStatus();
         } else {
           setQuizError("Incorrect answers. Please review the course slides and try again!");
         }
@@ -398,7 +392,7 @@ export default function TrainingClient() {
     return "Good evening";
   };
 
-  // Calendar computation helper
+  // Calendar computation helper (Monday to Sunday)
   const getCalendarDays = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -418,15 +412,28 @@ export default function TrainingClient() {
     return days;
   };
 
+  // Real-environment calendar completed dates checker
+  const getCompletedDateModules = (dayNum: number) => {
+    if (!dayNum || !rawProgress.length) return [];
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const targetDateStr = new Date(year, month, dayNum).toDateString();
+    
+    return rawProgress.filter((p: any) => {
+      if (!p.isCompleted || !p.completedAt) return false;
+      return new Date(p.completedAt).toDateString() === targetDateStr;
+    });
+  };
+
   const calendarDays = getCalendarDays();
   const currentMonthName = currentDate.toLocaleString("default", { month: "long" });
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center text-slate-600">
+      <div className="min-h-screen bg-[#070B13] flex items-center justify-center text-slate-300">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-12 h-12 border-4 border-accent-blue border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-mono uppercase tracking-wider text-slate-500 font-bold">Loading Academy Status...</p>
+          <p className="text-xs font-mono uppercase tracking-wider text-slate-400 font-bold">Loading Academy Status...</p>
         </div>
       </div>
     );
@@ -434,16 +441,17 @@ export default function TrainingClient() {
 
   if (!user) {
     return (
-      <div className="relative min-h-screen bg-[#F8FAFC] flex flex-col justify-between overflow-x-hidden">
+      <div className="relative min-h-screen bg-[#070B13] flex flex-col justify-between overflow-x-hidden text-slate-300">
+        <ScientificBackground />
         <Navbar currentUser={null} />
 
-        <main className="flex-grow pt-28 pb-16 flex items-center justify-center px-4">
-          <div className="max-w-md w-full border border-slate-200 bg-white rounded-3xl p-8 text-center space-y-6 shadow-xl relative overflow-hidden">
+        <main className="flex-grow pt-28 pb-16 flex items-center justify-center px-4 relative z-10">
+          <div className="max-w-md w-full border border-slate-800 bg-[#0B0F19]/90 backdrop-blur-md rounded-3xl p-8 text-center space-y-6 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-violet-600 via-accent-blue to-teal-500" />
             <Award className="w-16 h-16 text-amber-500/80 mx-auto animate-bounce" />
             <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-slate-900">Access Research Academy</h2>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-white">Access Research Academy</h2>
+              <p className="text-xs text-slate-400 leading-relaxed">
                 You must initialize your BioLabs credentials or log in to track module progress and earn credentials.
               </p>
             </div>
@@ -455,7 +463,7 @@ export default function TrainingClient() {
                 Log In to Academy
               </Link>
             </div>
-            <Link href="/" className="inline-flex items-center space-x-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors">
+            <Link href="/" className="inline-flex items-center space-x-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Return to Homepage</span>
             </Link>
@@ -479,30 +487,33 @@ export default function TrainingClient() {
     .toUpperCase();
 
   return (
-    <div className="relative min-h-screen bg-[#F8FAFC] flex flex-col justify-between overflow-x-hidden text-slate-700">
+    <div className="relative min-h-screen bg-[#070B13] flex flex-col justify-between overflow-x-hidden text-slate-300">
       
+      {/* Background illustration */}
+      <ScientificBackground />
+
       {/* Navbar */}
       <Navbar currentUser={user} />
 
-      <main className="flex-grow pt-28 pb-16">
+      <main className="flex-grow pt-28 pb-16 relative z-10">
         <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           
           {/* ============================================================== */}
-          {/* SECTION 1 — HEADER GREETING & CAREER GOALS (COURSERA STYLE) */}
+          {/* SECTION 1 — HEADER GREETING & RESEARCH GOALS (DARK MODE) */}
           {/* ============================================================== */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-200">
-            <div className="flex items-start gap-4 text-left w-full md:w-auto">
+          <div className="bg-[#0B0F19]/65 backdrop-blur-md border border-slate-800 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden shadow-sm">
+            <div className="flex items-start gap-4 text-left w-full md:w-auto z-10">
               {/* Profile Avatar circle */}
-              <div className="w-16 h-16 rounded-full bg-blue-900 text-white flex items-center justify-center font-bold text-xl shrink-0 shadow-inner">
+              <div className="w-16 h-16 rounded-full bg-accent-blue/20 border border-accent-blue/30 text-accent-blue flex items-center justify-center font-bold text-xl shrink-0 shadow-inner">
                 {initials}
               </div>
               <div className="space-y-1.5 min-w-0 flex-1">
-                <h1 className="text-2xl sm:text-3xl font-heading font-black text-slate-900 tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-heading font-black text-white tracking-tight">
                   {getGreeting()}, {user.name || user.email.split("@")[0]}
                 </h1>
                 
-                {/* Career Goals */}
-                <div className="text-xs text-slate-500 font-semibold leading-relaxed flex flex-wrap items-center gap-1">
+                {/* Research Goals */}
+                <div className="text-xs text-slate-400 font-semibold leading-relaxed flex flex-wrap items-center gap-1">
                   <span>Your career goal is to become a</span>
                   {isEditingGoal ? (
                     <div className="inline-flex items-center gap-1.5 mt-0.5">
@@ -510,7 +521,7 @@ export default function TrainingClient() {
                         type="text" 
                         value={goalInput}
                         onChange={(e) => setGoalInput(e.target.value)}
-                        className="bg-white border border-slate-300 rounded px-2 py-0.5 text-xs text-slate-800 font-bold focus:outline-none focus:border-accent-blue"
+                        className="bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs text-white font-bold focus:outline-none focus:border-accent-blue"
                       />
                       <button 
                         onClick={saveGoal}
@@ -521,13 +532,13 @@ export default function TrainingClient() {
                     </div>
                   ) : (
                     <>
-                      <strong className="text-slate-800 underline decoration-slate-400 font-bold">
+                      <strong className="text-slate-200 underline decoration-slate-600 font-bold">
                         {careerGoal}
                       </strong>
                       <span>. Academic / Guidance Counselor, Healthcare, or 2 more</span>
                       <button 
                         onClick={() => setIsEditingGoal(true)}
-                        className="text-accent-blue hover:text-blue-600 ml-1 inline-flex items-center gap-0.5 font-bold cursor-pointer"
+                        className="text-accent-blue hover:text-blue-400 ml-1 inline-flex items-center gap-0.5 font-bold cursor-pointer"
                       >
                         Edit goal
                       </button>
@@ -537,67 +548,67 @@ export default function TrainingClient() {
               </div>
             </div>
 
-            {/* Arched pathway vector illustration exactly like the Coursera layout */}
-            <div className="hidden md:block shrink-0 select-none">
+            {/* Glowing pathway vector illustration in cyber dark mode */}
+            <div className="hidden md:block shrink-0 select-none z-10 opacity-85">
               <svg width="240" height="110" viewBox="0 0 240 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Background Hill */}
-                <path d="M-20 120 C 60 70, 180 80, 260 120 Z" fill="#EEF2F6" />
-                <path d="M30 120 C 110 55, 200 60, 280 120 Z" fill="#E2E8F0" />
+                {/* Background Hill (Dark Glass Overlay) */}
+                <path d="M-20 120 C 60 70, 180 80, 260 120 Z" fill="rgba(30, 41, 59, 0.25)" />
+                <path d="M30 120 C 110 55, 200 60, 280 120 Z" fill="rgba(15, 23, 42, 0.45)" />
                 
-                {/* Winding Stairway Path */}
-                <path d="M 60 110 L 80 98 L 110 98 L 130 84 L 150 84 L 170 70 L 190 70" stroke="#C7D2FE" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                {/* Glowing Pathway */}
+                <path d="M 60 110 L 80 98 L 110 98 L 130 84 L 150 84 L 170 70 L 190 70" stroke="rgba(129, 140, 248, 0.4)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M 60 110 L 80 98 L 110 98 L 130 84 L 150 84 L 170 70 L 190 70" stroke="#818CF8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3,3" />
 
-                {/* Arched Doorway / Portal */}
+                {/* Arched Gateway Portal */}
                 <g transform="translate(180, 42)">
-                  {/* Door Shadow */}
-                  <rect x="0" y="0" width="22" height="34" rx="11" fill="#FEE2E2" />
+                  {/* Door Glow Shadow */}
+                  <rect x="0" y="0" width="22" height="34" rx="11" fill="rgba(245, 158, 11, 0.15)" />
                   {/* Outer Frame */}
-                  <rect x="2" y="0" width="18" height="32" rx="9" fill="#F59E0B" />
+                  <rect x="2" y="0" width="18" height="32" rx="9" fill="#F59E0B" stroke="#D97706" strokeWidth="1" />
                   {/* Inner Glowing doorway */}
-                  <rect x="4.5" y="3" width="13" height="29" rx="6.5" fill="#FEF3C7" />
+                  <rect x="4.5" y="3" width="13" height="29" rx="6.5" fill="#FEF3C7" className="animate-pulse" />
                   {/* Small stairs platform inside */}
                   <path d="M 4.5 24 L 17.5 24" stroke="#D97706" strokeWidth="2" />
                   <path d="M 4.5 28 L 17.5 28" stroke="#D97706" strokeWidth="2" />
                 </g>
 
-                {/* Trees (Cone pine style) */}
+                {/* Neon green trees */}
                 {/* Tree 1 */}
                 <g transform="translate(25, 68)">
                   <rect x="5.5" y="18" width="3" height="10" rx="1" fill="#78350F" />
-                  <polygon points="7,0 0,18 14,18" fill="#10B981" />
-                  <polygon points="7,4 2,14 12,14" fill="#34D399" />
+                  <polygon points="7,0 0,18 14,18" fill="#059669" />
+                  <polygon points="7,4 2,14 12,14" fill="#10B981" />
                 </g>
                 {/* Tree 2 */}
                 <g transform="translate(152, 54)">
                   <rect x="4.5" y="14" width="2" height="8" rx="1" fill="#78350F" />
-                  <polygon points="5.5,0 0,14 11,14" fill="#059669" />
-                  <polygon points="5.5,3 1.5,11 9.5,11" fill="#10B981" />
+                  <polygon points="5.5,0 0,14 11,14" fill="#047857" />
+                  <polygon points="5.5,3 1.5,11 9.5,11" fill="#059669" />
                 </g>
                 {/* Tree 3 */}
                 <g transform="translate(215, 64)">
                   <rect x="5.5" y="18" width="3" height="10" rx="1" fill="#78350F" />
-                  <polygon points="7,0 0,18 14,18" fill="#10B981" />
-                  <polygon points="7,4 2,14 12,14" fill="#34D399" />
+                  <polygon points="7,0 0,18 14,18" fill="#059669" />
+                  <polygon points="7,4 2,14 12,14" fill="#10B981" />
                 </g>
 
-                {/* Small circular path flag */}
-                <circle cx="60" cy="110" r="5" fill="#4338CA" />
+                {/* Small path node indicator */}
+                <circle cx="60" cy="110" r="5" fill="#818CF8" />
                 <circle cx="60" cy="110" r="2.5" fill="#FBBF24" />
               </svg>
             </div>
           </div>
 
           {/* ============================================================== */}
-          {/* SECTION 2 — HORIZONTAL TABS (IN PROGRESS, COMPLETED, CERTIFICATES) */}
+          {/* SECTION 2 — HORIZONTAL TABS (DARK STYLE) */}
           {/* ============================================================== */}
-          <div className="flex border-b border-slate-200 gap-6 text-xs font-semibold">
+          <div className="flex border-b border-slate-800 gap-6 text-xs font-semibold">
             <button
               onClick={() => setActiveTab("progress")}
               className={`pb-3 border-b-2 transition-all cursor-pointer ${
                 activeTab === "progress"
-                  ? "text-slate-900 border-[#0F172A] font-extrabold"
-                  : "text-slate-400 border-transparent hover:text-slate-600"
+                  ? "text-white border-accent-blue font-extrabold"
+                  : "text-slate-500 border-transparent hover:text-slate-300"
               }`}
             >
               In Progress
@@ -606,8 +617,8 @@ export default function TrainingClient() {
               onClick={() => setActiveTab("completed")}
               className={`pb-3 border-b-2 transition-all cursor-pointer ${
                 activeTab === "completed"
-                  ? "text-slate-900 border-[#0F172A] font-extrabold"
-                  : "text-slate-400 border-transparent hover:text-slate-600"
+                  ? "text-white border-accent-blue font-extrabold"
+                  : "text-slate-500 border-transparent hover:text-slate-300"
               }`}
             >
               Completed
@@ -616,8 +627,8 @@ export default function TrainingClient() {
               onClick={() => setActiveTab("certificates")}
               className={`pb-3 border-b-2 transition-all cursor-pointer ${
                 activeTab === "certificates"
-                  ? "text-slate-900 border-[#0F172A] font-extrabold"
-                  : "text-slate-400 border-transparent hover:text-slate-600"
+                  ? "text-white border-accent-blue font-extrabold"
+                  : "text-slate-500 border-transparent hover:text-slate-300"
               }`}
             >
               Certificates
@@ -638,33 +649,33 @@ export default function TrainingClient() {
                   {inProgressModules.map((mod) => (
                     <div 
                       key={mod.index}
-                      className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs flex flex-col md:flex-row items-stretch justify-between gap-6 hover:shadow-md hover:border-slate-300 transition-all duration-300 text-left"
+                      className="bg-[#0B0F19]/60 backdrop-blur-md border border-slate-800/80 rounded-3xl p-6 shadow-xs flex flex-col md:flex-row items-stretch justify-between gap-6 hover:border-slate-700 transition-all duration-300 text-left animate-in fade-in"
                     >
                       {/* Left: Provider, Course Title, Progress Bar */}
                       <div className="flex-1 space-y-3 min-w-0">
                         <div className="flex items-center space-x-2">
-                          <span className="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-500 shrink-0">
+                          <span className="w-6 h-6 rounded bg-slate-900 border border-slate-800 flex items-center justify-center text-[8px] font-bold text-slate-400 shrink-0">
                             🎓
                           </span>
                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{mod.provider}</span>
                         </div>
-                        <h3 className="text-base font-bold font-heading text-slate-900 leading-snug">
+                        <h3 className="text-base font-bold font-heading text-white leading-snug">
                           {mod.title}
                         </h3>
-                        <p className="text-[10px] text-slate-400 font-semibold">
+                        <p className="text-[10px] text-slate-500 font-semibold">
                           Course • 0% complete • Estimated completion: {mod.estCompletion}
                         </p>
                         {/* Progress Bar */}
-                        <div className="w-full max-w-[260px] bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200 mt-2">
-                          <div className="bg-violet-600 h-full w-[2%]" />
+                        <div className="w-full max-w-[260px] bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800 mt-2">
+                          <div className="bg-violet-650 h-full w-[2%]" />
                         </div>
                       </div>
 
                       {/* Middle: Next task information */}
-                      <div className="flex-1 md:border-l md:border-slate-100 md:pl-6 flex flex-col justify-center text-left">
-                        <p className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">{mod.nextTask}</p>
+                      <div className="flex-1 md:border-l md:border-slate-800 md:pl-6 flex flex-col justify-center text-left">
+                        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">{mod.nextTask}</p>
                         <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-1 font-mono">
-                          <Play className="w-3 h-3 text-slate-400" /> {mod.duration}
+                          <Play className="w-3 h-3 text-slate-500" /> {mod.duration}
                         </p>
                       </div>
 
@@ -676,7 +687,7 @@ export default function TrainingClient() {
                         >
                           Resume
                         </button>
-                        <button className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+                        <button className="text-slate-500 hover:text-slate-300 p-1 cursor-pointer">
                           <MoreVertical className="w-5 h-5" />
                         </button>
                       </div>
@@ -684,11 +695,11 @@ export default function TrainingClient() {
                   ))}
 
                   {inProgressModules.length === 0 && (
-                    <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-12 text-center space-y-4">
+                    <div className="bg-[#0B0F19]/40 border border-dashed border-slate-800 rounded-3xl p-12 text-center space-y-4">
                       <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto" />
                       <div>
-                        <h4 className="text-base font-bold text-slate-800">All modules completed!</h4>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <h4 className="text-base font-bold text-white">All modules completed!</h4>
+                        <p className="text-xs text-slate-400 mt-1">
                           You have completed the entire curriculum. Head over to the Certificates tab to claim your reward.
                         </p>
                       </div>
@@ -703,33 +714,33 @@ export default function TrainingClient() {
                   {completedModules.map((mod) => (
                     <div 
                       key={mod.index}
-                      className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs flex flex-col md:flex-row items-stretch justify-between gap-6 hover:shadow-md hover:border-slate-300 transition-all duration-300 text-left"
+                      className="bg-[#0B0F19]/60 backdrop-blur-md border border-slate-800/80 rounded-3xl p-6 shadow-xs flex flex-col md:flex-row items-stretch justify-between gap-6 hover:border-slate-700 transition-all duration-300 text-left animate-in fade-in"
                     >
                       {/* Left: Provider, Course Title, Progress Bar */}
                       <div className="flex-1 space-y-3 min-w-0">
                         <div className="flex items-center space-x-2">
-                          <span className="w-6 h-6 rounded bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[8px] font-bold text-emerald-600 shrink-0">
+                          <span className="w-6 h-6 rounded bg-emerald-950/40 border border-emerald-900/30 flex items-center justify-center text-[8px] font-bold text-emerald-400 shrink-0">
                             ✓
                           </span>
                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{mod.provider}</span>
                         </div>
-                        <h3 className="text-base font-bold font-heading text-slate-900 leading-snug">
+                        <h3 className="text-base font-bold font-heading text-white leading-snug">
                           {mod.title}
                         </h3>
-                        <p className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
-                          <span className="text-emerald-500">✓ 100% complete</span> • Passed
+                        <p className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                          <span className="text-emerald-400">✓ 100% complete</span> • Passed
                         </p>
                         {/* Progress Bar */}
-                        <div className="w-full max-w-[260px] bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200 mt-2">
-                          <div className="bg-emerald-500 h-full w-full" />
+                        <div className="w-full max-w-[260px] bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800 mt-2">
+                          <div className="bg-emerald-550 h-full w-full" />
                         </div>
                       </div>
 
                       {/* Middle: Review info */}
-                      <div className="flex-1 md:border-l md:border-slate-100 md:pl-6 flex flex-col justify-center text-left">
-                        <p className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">Review Course Slides</p>
+                      <div className="flex-1 md:border-l md:border-slate-800 md:pl-6 flex flex-col justify-center text-left">
+                        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Review Course Slides</p>
                         <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-1 font-mono">
-                          <FileText className="w-3 h-3 text-slate-400" /> Study Material (15 minutes)
+                          <FileText className="w-3 h-3 text-slate-500" /> Study Material (15 minutes)
                         </p>
                       </div>
 
@@ -737,11 +748,11 @@ export default function TrainingClient() {
                       <div className="flex items-center justify-between md:justify-end gap-4 shrink-0">
                         <button
                           onClick={() => handleStartModule(mod)}
-                          className="border border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-55 hover:text-slate-900 font-bold text-xs px-6 py-2.5 rounded-xl transition-all cursor-pointer shadow-xs"
+                          className="border border-slate-800 hover:border-slate-700 text-slate-300 hover:bg-slate-900 hover:text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all cursor-pointer shadow-xs"
                         >
                           Review
                         </button>
-                        <button className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+                        <button className="text-slate-500 hover:text-slate-300 p-1 cursor-pointer">
                           <MoreVertical className="w-5 h-5" />
                         </button>
                       </div>
@@ -749,10 +760,10 @@ export default function TrainingClient() {
                   ))}
 
                   {completedModules.length === 0 && (
-                    <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-12 text-center space-y-4">
-                      <Lock className="w-12 h-12 text-slate-300 mx-auto" />
+                    <div className="bg-[#0B0F19]/40 border border-dashed border-slate-800 rounded-3xl p-12 text-center space-y-4">
+                      <Lock className="w-12 h-12 text-slate-700 mx-auto" />
                       <div>
-                        <h4 className="text-base font-bold text-slate-800">No completed courses yet</h4>
+                        <h4 className="text-base font-bold text-slate-400">No completed courses yet</h4>
                         <p className="text-xs text-slate-500 mt-1">
                           Complete slides and score 100% on checkup exams to list modules here.
                         </p>
@@ -764,7 +775,7 @@ export default function TrainingClient() {
 
               {/* TAB 3: CERTIFICATES */}
               {activeTab === "certificates" && (
-                <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-md text-left">
+                <div className="bg-[#0B0F19]/60 backdrop-blur-md border border-slate-800 rounded-3xl overflow-hidden shadow-md text-left animate-in fade-in">
                   {certificate ? (
                     <div className="flex flex-col">
                       {/* Certificate Preview Scaled */}
@@ -779,19 +790,19 @@ export default function TrainingClient() {
                           </div>
                         </div>
                         {/* Glow overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
                       </div>
 
                       {/* Info + Actions */}
-                      <div className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-slate-100">
+                      <div className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-slate-800">
                         <div className="space-y-1.5">
-                          <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest font-mono flex items-center space-x-1">
+                          <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest font-mono flex items-center space-x-1">
                             <ShieldCheck className="w-4 h-4 text-emerald-500" />
                             <span>Verified Credential — Active</span>
                           </span>
-                          <h3 className="text-base font-heading font-extrabold text-slate-900 uppercase leading-none">Certificate of Completion</h3>
+                          <h3 className="text-base font-heading font-extrabold text-white uppercase leading-none">Certificate of Completion</h3>
                           <div className="flex items-center space-x-2 mt-1.5">
-                            <div className="px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 font-mono text-[9px] font-bold text-amber-600 select-all tracking-wider shadow-inner truncate max-w-[220px]">
+                            <div className="px-2.5 py-1 rounded-md border border-slate-800 bg-slate-950 font-mono text-[9px] font-bold text-amber-500 select-all tracking-wider shadow-inner truncate max-w-[220px]">
                               {certificate.certHash}
                             </div>
                           </div>
@@ -799,7 +810,7 @@ export default function TrainingClient() {
                         <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
                           <Link
                             href={`/training/verify?hash=${certificate.certHash}`}
-                            className="flex-1 sm:flex-none text-center px-4 py-2.5 rounded-lg border border-slate-200 hover:border-accent-blue/50 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 transition-all"
+                            className="flex-1 sm:flex-none text-center px-4 py-2.5 rounded-lg border border-slate-800 hover:border-accent-blue/50 bg-[#0B0F19] hover:bg-slate-900 text-slate-300 hover:text-white text-[10px] font-bold uppercase tracking-wider flex items-center justify-center space-x-1.5 transition-all"
                           >
                             <FileCheck2 className="w-3.5 h-3.5 text-accent-blue" />
                             <span>Verify Portal</span>
@@ -816,11 +827,11 @@ export default function TrainingClient() {
                     </div>
                   ) : (
                     <div className="p-10 flex flex-col items-center justify-center text-center space-y-6 max-w-lg mx-auto">
-                      <div className="w-14 h-14 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center">
-                        <Award className="w-7 h-7 text-slate-400" />
+                      <div className="w-14 h-14 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center">
+                        <Award className="w-7 h-7 text-slate-700" />
                       </div>
                       <div className="space-y-2">
-                        <h4 className="text-sm font-heading font-extrabold text-slate-800 uppercase tracking-wider">Credential Locked</h4>
+                        <h4 className="text-sm font-heading font-extrabold text-slate-400 uppercase tracking-wider">Credential Locked</h4>
                         <p className="text-xs text-slate-500 leading-relaxed">
                           Complete all 4 training modules and score 100% on their exams to unlock your credential.
                         </p>
@@ -840,8 +851,8 @@ export default function TrainingClient() {
                             <span>Syllabus Completion</span>
                             <span>{progressPercent}%</span>
                           </div>
-                          <div className="h-2 w-full bg-slate-100 border border-slate-200 rounded-full overflow-hidden">
-                            <div className="bg-violet-600 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+                          <div className="h-2 w-full bg-slate-950 border border-slate-800 rounded-full overflow-hidden">
+                            <div className="bg-violet-650 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
                           </div>
                         </div>
                       )}
@@ -856,9 +867,9 @@ export default function TrainingClient() {
             <div className="lg:col-span-4 space-y-6">
               
               {/* Calendar Widget */}
-              <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs text-left">
+              <div className="bg-[#0B0F19]/65 backdrop-blur-md border border-slate-800 rounded-3xl p-5 shadow-xs text-left">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xs font-bold font-heading text-slate-900 uppercase tracking-wider">
+                  <h3 className="text-xs font-bold font-heading text-white uppercase tracking-wider">
                     {currentMonthName} {currentDate.getFullYear()}
                   </h3>
                   <div className="flex space-x-1">
@@ -868,7 +879,7 @@ export default function TrainingClient() {
                         newDate.setMonth(newDate.getMonth() - 1);
                         setCurrentDate(newDate);
                       }}
-                      className="p-1 hover:bg-slate-100 rounded cursor-pointer text-slate-400 hover:text-slate-700"
+                      className="p-1 hover:bg-slate-800 rounded cursor-pointer text-slate-500 hover:text-white"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -878,7 +889,7 @@ export default function TrainingClient() {
                         newDate.setMonth(newDate.getMonth() + 1);
                         setCurrentDate(newDate);
                       }}
-                      className="p-1 hover:bg-slate-100 rounded cursor-pointer text-slate-400 hover:text-slate-700"
+                      className="p-1 hover:bg-slate-800 rounded cursor-pointer text-slate-500 hover:text-white"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -886,7 +897,7 @@ export default function TrainingClient() {
                 </div>
 
                 {/* Calendar Days of Week */}
-                <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-2 font-mono">
+                <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-500 mb-2 font-mono">
                   <span>Mo</span>
                   <span>Tu</span>
                   <span>We</span>
@@ -902,29 +913,86 @@ export default function TrainingClient() {
                     const isToday = day === new Date().getDate() && 
                                     currentDate.getMonth() === new Date().getMonth() && 
                                     currentDate.getFullYear() === new Date().getFullYear();
+                    
+                    // Fetch completed items for this specific date
+                    const completedOnDate = day ? getCompletedDateModules(day) : [];
+                    const hasCompletes = completedOnDate.length > 0;
+                    const allCompleted = completedOnDate.length === MODULES.length;
+                    const isSelected = selectedDay === day;
+
                     return (
                       <div 
                         key={idx} 
-                        className="h-7 flex items-center justify-center relative"
+                        className="h-8 flex flex-col items-center justify-center relative"
                       >
                         {day && (
-                          <span className={`w-7 h-7 flex items-center justify-center rounded-full leading-none ${
-                            isToday 
-                              ? "border-2 border-violet-600 font-extrabold text-violet-700" 
-                              : "text-slate-700 hover:bg-slate-100 cursor-pointer"
-                          }`}>
-                            {day}
-                          </span>
+                          <div className="relative">
+                            <span 
+                              onClick={() => setSelectedDay(day === selectedDay ? null : day)}
+                              className={`w-7 h-7 flex items-center justify-center rounded-full leading-none transition-all cursor-pointer ${
+                                isSelected
+                                  ? "bg-accent-blue text-white font-extrabold shadow-sm shadow-blue-500/30"
+                                  : isToday 
+                                    ? "border-2 border-accent-blue font-extrabold text-accent-blue shadow-xs shadow-blue-500/10" 
+                                    : "text-slate-300 hover:bg-slate-800/60"
+                              }`}
+                            >
+                              {day}
+                            </span>
+                            {/* Tiny glowing dot if they completed research modules on this day */}
+                            {hasCompletes && !isSelected && (
+                              <span className={`absolute bottom-[-2.5px] left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${
+                                allCompleted ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : "bg-violet-500 shadow-xs shadow-violet-500/50"
+                              }`} />
+                            )}
+                          </div>
                         )}
                       </div>
                     );
                   })}
                 </div>
 
+                {/* Selected Day Info */}
+                {selectedDay && (
+                  <div className="mt-4 p-3 rounded-2xl bg-slate-950/80 border border-slate-800 animate-in fade-in slide-in-from-top-1 text-xs">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-slate-200">
+                        {currentMonthName} {selectedDay}, {currentDate.getFullYear()}
+                      </span>
+                      <button 
+                        onClick={() => setSelectedDay(null)}
+                        className="text-slate-500 hover:text-slate-300 p-0.5 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    {getCompletedDateModules(selectedDay).length > 0 ? (
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Completed Modules:</p>
+                        <div className="space-y-1">
+                          {getCompletedDateModules(selectedDay).map((p: any) => {
+                            const modDetails = MODULES[p.moduleIndex];
+                            return (
+                              <div key={p.moduleIndex} className="flex items-center justify-between text-slate-300 bg-slate-900/50 p-2 rounded-lg border border-slate-800/50">
+                                <span className="font-semibold truncate max-w-[170px]">{modDetails?.title}</span>
+                                <span className="text-[9px] font-mono text-slate-500">
+                                  {new Date(p.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-slate-500 italic text-center py-2">No modules completed on this date.</p>
+                    )}
+                  </div>
+                )}
+
                 {/* Calendar Legend */}
-                <div className="flex items-center gap-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-4 pt-3 border-t border-slate-100 font-mono">
+                <div className="flex items-center gap-4 text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-4 pt-3 border-t border-slate-800 font-mono">
                   <span className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-violet-600" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
                     1+ daily goals
                   </span>
                   <span className="flex items-center gap-1.5">
@@ -935,26 +1003,28 @@ export default function TrainingClient() {
               </div>
 
               {/* Stats Widget */}
-              <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs text-left space-y-4">
+              <div className="bg-[#0B0F19]/65 backdrop-blur-md border border-slate-800 rounded-3xl p-5 shadow-xs text-left space-y-4">
                 <div>
-                  <h3 className="text-xs font-bold font-heading text-slate-900 uppercase tracking-wider">
+                  <h3 className="text-xs font-bold font-heading text-white uppercase tracking-wider">
                     Last 4 weeks
                   </h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Activity Record</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">Activity Record</p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div className="space-y-1">
-                    <p className="text-2xl font-black font-heading text-slate-900 leading-none">{completedCount}</p>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-tight">Daily goals completed</p>
+                    <p className="text-2xl font-black font-heading text-white leading-none">
+                      {rawProgress.filter(p => p.isCompleted).length}
+                    </p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500 leading-tight">Daily goals completed</p>
                   </div>
-                  <div className="space-y-1 border-l border-slate-100">
-                    <p className="text-2xl font-black font-heading text-slate-900 leading-none">{completedCount}</p>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-tight">Items completed</p>
+                  <div className="space-y-1 border-l border-slate-800">
+                    <p className="text-2xl font-black font-heading text-white leading-none">{completedCount}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500 leading-tight">Items completed</p>
                   </div>
-                  <div className="space-y-1 border-l border-slate-100">
-                    <p className="text-2xl font-black font-heading text-slate-900 leading-none">{completedCount * 15}</p>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-tight">Minutes learned</p>
+                  <div className="space-y-1 border-l border-slate-800">
+                    <p className="text-2xl font-black font-heading text-white leading-none">{completedCount * 15}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500 leading-tight">Minutes learned</p>
                   </div>
                 </div>
               </div>
@@ -970,23 +1040,23 @@ export default function TrainingClient() {
       <Footer />
 
       {/* ============================================================== */}
-      {/* SLIDESHOW / QUIZ VIEWER MODAL OVERLAY */}
+      {/* SLIDESHOW / QUIZ VIEWER MODAL OVERLAY (DARK STYLE) */}
       {/* ============================================================== */}
       {activeModule && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full border border-slate-200 bg-white rounded-3xl shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[440px] max-h-[90vh] text-slate-700">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full border border-slate-800 bg-[#0B0F19] rounded-2xl shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[440px] max-h-[90vh] text-slate-300">
             
             {/* Header top bar */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div className="p-5 border-b border-slate-850 flex items-center justify-between">
               <div className="text-left">
                 <span className="text-[9px] font-bold text-accent-blue uppercase tracking-widest font-mono">Module 0{activeModule.index + 1} Course Material</span>
-                <h3 className="text-base font-heading font-extrabold text-slate-950 uppercase tracking-tight leading-none mt-1">
+                <h3 className="text-base font-heading font-extrabold text-white uppercase tracking-tight leading-none mt-1">
                   {activeModule.title}
                 </h3>
               </div>
               <button 
                 onClick={() => setActiveModule(null)}
-                className="w-8 h-8 rounded-lg hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 cursor-pointer transition-colors"
+                className="w-8 h-8 rounded-lg hover:bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 hover:text-white cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -998,15 +1068,15 @@ export default function TrainingClient() {
                 /* STUDY SLIDES PANEL */
                 <div className="space-y-6 max-w-lg mx-auto">
                   <div className="space-y-2 text-center">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono block">
                       Slide {activeSlideIdx + 1} of {activeModule.slides.length}
                     </span>
-                    <h4 className="text-base sm:text-xl font-heading font-extrabold text-slate-900 uppercase tracking-tight leading-snug">
+                    <h4 className="text-base sm:text-xl font-heading font-extrabold text-white uppercase tracking-tight leading-snug">
                       {activeModule.slides[activeSlideIdx].title}
                     </h4>
                   </div>
                   
-                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed text-justify font-medium px-4">
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed text-justify font-medium px-4">
                     {activeModule.slides[activeSlideIdx].content}
                   </p>
                 </div>
@@ -1014,16 +1084,16 @@ export default function TrainingClient() {
                 /* QUIZ MULTIPLE CHOICE PANEL */
                 <div className="space-y-6 max-w-lg mx-auto w-full">
                   <div className="text-center space-y-1">
-                    <span className="text-[9px] font-bold text-amber-600 uppercase tracking-widest font-mono block animate-pulse">Knowledge Verification</span>
-                    <h4 className="text-base sm:text-lg font-heading font-extrabold text-slate-900 uppercase leading-none">Module 0{activeModule.index + 1} Checkup Quiz</h4>
+                    <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest font-mono block animate-pulse">Knowledge Verification</span>
+                    <h4 className="text-base sm:text-lg font-heading font-extrabold text-white uppercase leading-none">Module 0{activeModule.index + 1} Checkup Quiz</h4>
                   </div>
 
                   {quizSuccess ? (
-                    <div className="p-6 border border-emerald-100 bg-emerald-50 rounded-2xl space-y-4 text-center">
+                    <div className="p-6 border border-emerald-900/40 bg-emerald-950/20 rounded-2xl space-y-4 text-center">
                       <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto" />
                       <div className="space-y-1">
-                        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Module Exam Passed!</h4>
-                        <p className="text-[10px] text-slate-500 leading-relaxed">
+                        <h4 className="text-sm font-bold text-white uppercase tracking-wider">Module Exam Passed!</h4>
+                        <p className="text-[10px] text-slate-400 leading-relaxed">
                           Your score has been saved in the registry database. You can proceed to check other modules or claim credentials.
                         </p>
                       </div>
@@ -1032,7 +1102,7 @@ export default function TrainingClient() {
                     <div className="space-y-5 text-left w-full">
                       {activeModule.quiz.questions.map((qObj: any, qIdx: number) => (
                         <div key={qIdx} className="space-y-2.5">
-                          <p className="text-xs font-bold text-slate-800">
+                          <p className="text-xs font-bold text-slate-250">
                             {qIdx + 1}. {qObj.q}
                           </p>
                           <div className="grid grid-cols-1 gap-2">
@@ -1044,8 +1114,8 @@ export default function TrainingClient() {
                                   onClick={() => handleSelectAnswer(qIdx, optIdx)}
                                   className={`p-3 text-left text-xs rounded-xl border transition-all cursor-pointer ${
                                     isSelected 
-                                      ? "border-accent-blue bg-blue-50/40 text-slate-900 font-semibold" 
-                                      : "border-slate-200 bg-slate-50 hover:border-slate-300 text-slate-500 hover:text-slate-700"
+                                      ? "border-accent-blue bg-blue-950/30 text-white font-semibold" 
+                                      : "border-slate-800 bg-slate-950/40 hover:border-slate-700 text-slate-400 hover:text-slate-200"
                                   }`}
                                 >
                                   {opt}
@@ -1057,7 +1127,7 @@ export default function TrainingClient() {
                       ))}
 
                       {quizError && (
-                        <div className="p-3 rounded-lg bg-rose-50/60 border border-rose-200 text-rose-700 text-[10px] font-bold text-center">
+                        <div className="p-3 rounded-lg bg-rose-950/25 border border-rose-900/30 text-rose-400 text-[10px] font-bold text-center animate-shake">
                           {quizError}
                         </div>
                       )}
@@ -1068,13 +1138,13 @@ export default function TrainingClient() {
             </div>
 
             {/* Bottom slides navigation bar */}
-            <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <div className="p-4 sm:p-5 border-t border-slate-850 bg-slate-950/30 flex items-center justify-between">
               {!showQuiz ? (
                 <>
                   <button
                     onClick={handlePrevSlide}
                     disabled={activeSlideIdx === 0}
-                    className="px-3.5 py-2 rounded-lg border border-slate-200 hover:border-slate-350 bg-white text-slate-600 disabled:opacity-30 cursor-pointer flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider transition-colors"
+                    className="px-3.5 py-2 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 text-slate-400 disabled:opacity-30 cursor-pointer flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     <span>Previous</span>
@@ -1096,7 +1166,7 @@ export default function TrainingClient() {
                       setQuizSuccess(false);
                     }}
                     disabled={quizSuccess}
-                    className="px-3.5 py-2 rounded-lg border border-slate-200 hover:border-slate-300 bg-white text-slate-600 disabled:opacity-30 cursor-pointer flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider transition-colors"
+                    className="px-3.5 py-2 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 text-slate-400 disabled:opacity-30 cursor-pointer flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     <span>Review Materials</span>

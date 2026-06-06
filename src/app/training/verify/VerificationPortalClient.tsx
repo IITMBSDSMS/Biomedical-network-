@@ -120,7 +120,7 @@ export default function VerificationPortalClient() {
             value={certHash}
             onChange={(e) => setCertHash(e.target.value)}
             disabled={loading}
-            className="w-full py-3.5 pl-11 pr-28 rounded-xl border border-slate-800 bg-[#0B0F19]/90 hover:border-slate-800 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue text-xs text-white font-mono placeholder:text-slate-650 transition-all focus:outline-none"
+            className="w-full py-3.5 pl-11 pr-28 rounded-xl border border-slate-800 bg-[#0B0F19]/90 hover:border-slate-800 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue text-xs text-white font-mono placeholder:text-slate-500 transition-all focus:outline-none"
           />
           <button
             type="submit"

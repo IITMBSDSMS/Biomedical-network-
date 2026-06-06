@@ -7,7 +7,7 @@ const QUIZ_ANSWERS: Record<number, number[]> = {
   0: [1, 2], // Module 1: Q1: Option index 1, Q2: Option index 2
   1: [0, 1], // Module 2: Q1: Option index 0, Q2: Option index 1
   2: [2, 0], // Module 3: Q1: Option index 2, Q2: Option index 0
-  3: [1, 3]  // Module 4: Q1: Option index 1, Q2: Option index 3
+  3: [1, 2]  // Module 4: Q1: Option index 1, Q2: Option index 2
 };
 
 export async function POST(req: Request) {

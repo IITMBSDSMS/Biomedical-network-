@@ -99,7 +99,7 @@ export default function Navbar({ currentUser }: NavbarProps) {
 
   const isHome = pathname === "/";
   const isLandingPage = pathname === "/" || pathname === "/fellowships";
-  const isLightPage = pathname === "/fellowships" || pathname === "/training";
+  const isLightPage = pathname === "/fellowships";
 
   return (
     <motion.header
