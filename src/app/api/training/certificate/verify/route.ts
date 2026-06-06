@@ -19,11 +19,6 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { id: certificate.userId },
-      select: {
-        email: true,
-        role: true,
-        photoUrl: true,
-      },
     });
 
     return NextResponse.json({

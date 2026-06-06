@@ -24,7 +24,6 @@ export async function generateMetadata({ params }: PublicationPageProps): Promis
   try {
     publication = await prisma.publication.findUnique({
       where: { id },
-      select: { title: true, abstract: true },
     });
   } catch (err) {
     console.warn("Database offline during metadata generation:", err);

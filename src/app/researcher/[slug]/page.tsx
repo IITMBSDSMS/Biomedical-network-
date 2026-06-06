@@ -24,7 +24,6 @@ export async function generateMetadata({ params }: ResearcherPageProps): Promise
   try {
     researcher = await prisma.researcher.findUnique({
       where: { slug },
-      select: { fullName: true, bio: true, institutionName: true },
     });
   } catch (err) {
     console.warn("Database offline during researcher metadata generation:", err);

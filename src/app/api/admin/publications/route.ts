@@ -17,11 +17,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Publication ID is required" }, { status: 400 });
     }
 
-    const publication = await prisma.publication.update({
+    await prisma.publication.update({
       where: { id: publicationId },
       data: {
         isApproved: approve,
       },
+    });
+
+    // Reload with researcher and user data
+    const publication = await prisma.publication.findUnique({
+      where: { id: publicationId },
       include: {
         researcher: {
           include: {
@@ -31,8 +36,12 @@ export async function POST(request: Request) {
       },
     });
 
+    if (!publication) {
+      return NextResponse.json({ error: "Publication not found after update" }, { status: 404 });
+    }
+
     // If approved, trigger user notification & email
-    if (approve && publication.researcher.user) {
+    if (approve && publication.researcher?.user) {
       await prisma.notification.create({
         data: {
           userId: publication.researcher.user.id,

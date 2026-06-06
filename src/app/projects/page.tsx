@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export default async function ProjectsPage() {
   const currentUser = await getCurrentUser();
 
-  let researcher = null;
+  let researcher: any = null;
   let projects: any[] = [];
   let allResearchers: any[] = [];
 
@@ -81,18 +81,12 @@ export default async function ProjectsPage() {
       // Find other researchers to invite
       try {
         allResearchers = await prisma.researcher.findMany({
-          where: {
-            NOT: { id: researcher.id },
-          },
-          select: {
-            id: true,
-            fullName: true,
-            institutionName: true,
-          },
           orderBy: {
             fullName: "asc",
           },
         });
+        // Filter out current researcher client-side
+        allResearchers = allResearchers.filter((r: any) => r.id !== researcher.id);
       } catch (err) {
         console.warn("Database offline, using empty allResearchers fallback:", err);
       }
