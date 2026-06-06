@@ -59,7 +59,12 @@ export default function Footer() {
               <a href="#" className="text-slate-500 hover:text-accent-blue transition-colors">
                 <TwitterIcon className="w-4 h-4" />
               </a>
-              <a href="#" className="text-slate-500 hover:text-accent-blue transition-colors">
+              <a
+                href="https://www.linkedin.com/showcase/biolabsofficial/?viewAsMember=true"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-500 hover:text-accent-blue transition-colors"
+              >
                 <LinkedinIcon className="w-4 h-4" />
               </a>
               <a href="#" className="text-slate-500 hover:text-accent-blue transition-colors">
