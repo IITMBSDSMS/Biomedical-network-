@@ -12,6 +12,7 @@ interface AdminDashboardProps {
   initialEmailLogs: any[];
   initialAmbassadorApplications: any[];
   projectCount: number;
+  initialLeadershipMembers: any[];
 }
 
 const formatStableTime = (dateInput: Date | string) => {
@@ -30,11 +31,12 @@ export default function AdminDashboardClient({
   initialEmailLogs,
   initialAmbassadorApplications,
   projectCount,
+  initialLeadershipMembers,
 }: AdminDashboardProps) {
   const router = useRouter();
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<"researchers" | "publications" | "fellowships" | "emails" | "video" | "chapters" | "ambassadors" | "users">("researchers");
+  const [activeTab, setActiveTab] = useState<"researchers" | "publications" | "fellowships" | "emails" | "video" | "chapters" | "ambassadors" | "users" | "leadership">("researchers");
   
   // Data lists (in local state so toggle actions react immediately)
   const [researchers, setResearchers] = useState(initialResearchers);
@@ -42,11 +44,240 @@ export default function AdminDashboardClient({
   const [fellowships, setFellowships] = useState(initialFellowshipApplications);
   const [emailLogs, setEmailLogs] = useState(initialEmailLogs);
   const [ambassadors, setAmbassadors] = useState(initialAmbassadorApplications);
+  const [leadershipMembers, setLeadershipMembers] = useState(initialLeadershipMembers || []);
 
   // User Management State
   const [users, setUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
+
+  // Leadership Management State
+  const [isLeadershipModalOpen, setIsLeadershipModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<any | null>(null);
+  const [memberSection, setMemberSection] = useState("Board of Advisors");
+  const [memberName, setMemberName] = useState("");
+  const [memberRole, setMemberRole] = useState("");
+  const [memberInstitution, setMemberInstitution] = useState("");
+  const [memberExpertise, setMemberExpertise] = useState("");
+  const [memberPhoto, setMemberPhoto] = useState("");
+  const [memberLinkedin, setMemberLinkedin] = useState("");
+  const [memberBio, setMemberBio] = useState("");
+  const [memberSortOrder, setMemberSortOrder] = useState(0);
+
+  const [isDragOverPhoto, setIsDragOverPhoto] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState("");
+  const photoFileRef = useRef<HTMLInputElement>(null);
+
+  const handleOpenAddModal = () => {
+    setEditingMember(null);
+    setMemberSection("Board of Advisors");
+    setMemberName("");
+    setMemberRole("");
+    setMemberInstitution("");
+    setMemberExpertise("");
+    setMemberPhoto("");
+    setMemberLinkedin("");
+    setMemberBio("");
+    setMemberSortOrder(leadershipMembers.length + 1);
+    setPhotoPreview("");
+    setIsLeadershipModalOpen(true);
+  };
+
+  const handleOpenEditModal = (member: any) => {
+    setEditingMember(member);
+    setMemberSection(member.section);
+    setMemberName(member.name);
+    setMemberRole(member.role);
+    setMemberInstitution(member.institution);
+    
+    let tagsStr = "";
+    try {
+      if (typeof member.expertise === "string") {
+        tagsStr = JSON.parse(member.expertise).join(", ");
+      } else if (Array.isArray(member.expertise)) {
+        tagsStr = member.expertise.join(", ");
+      }
+    } catch {
+      tagsStr = "";
+    }
+    
+    setMemberExpertise(tagsStr);
+    setMemberPhoto(member.photo);
+    setMemberLinkedin(member.linkedin);
+    setMemberBio(member.bio);
+    setMemberSortOrder(member.sortOrder || 0);
+    setPhotoPreview(member.photo);
+    setIsLeadershipModalOpen(true);
+  };
+
+  const handleDeleteMember = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this member?")) return;
+    setActionLoading(`delete-${id}`);
+    try {
+      const res = await fetch(`/api/admin/leadership?id=${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLeadershipMembers(leadershipMembers.filter((m: any) => m.id !== id));
+        triggerToast("Leadership member deleted successfully.");
+      } else {
+        triggerToast(data.error || "Delete failed.", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast("An error occurred.", "error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const compressAndUploadImage = (file: File) => {
+    if (!file) return;
+    setPhotoUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 300;
+        const MAX_HEIGHT = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            async (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name || "photo.jpg", {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+
+                try {
+                  const fd = new FormData();
+                  fd.append("file", compressedFile);
+                  fd.append("type", "leadership-photo");
+                  const res = await fetch("/api/admin/upload-media", {
+                    method: "POST",
+                    body: fd,
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || "Upload failed");
+                  setMemberPhoto(data.url);
+                  setPhotoPreview(data.url);
+                  triggerToast("Photo uploaded and compressed successfully.");
+                } catch (err: any) {
+                  triggerToast(err.message || "Photo upload failed.", "error");
+                } finally {
+                  setPhotoUploading(false);
+                }
+              } else {
+                setPhotoUploading(false);
+                triggerToast("Compression failed.", "error");
+              }
+            },
+            "image/jpeg",
+            0.85
+          );
+        } else {
+          setPhotoUploading(false);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePhotoDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOverPhoto(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file || !file.type.startsWith("image/")) {
+      triggerToast("Please drop an image file.", "error");
+      return;
+    }
+    compressAndUploadImage(file);
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    compressAndUploadImage(file);
+  };
+
+  const handleSaveMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!memberName || !memberRole || !memberInstitution || !memberPhoto || !memberLinkedin || !memberBio) {
+      triggerToast("Please fill in all required fields (including photo).", "error");
+      return;
+    }
+
+    const tags = memberExpertise
+      .split(",")
+      .map(t => t.trim())
+      .filter(t => t.length > 0);
+
+    const payload = {
+      id: editingMember?.id,
+      section: memberSection,
+      name: memberName,
+      role: memberRole,
+      institution: memberInstitution,
+      expertise: JSON.stringify(tags),
+      photo: memberPhoto,
+      linkedin: memberLinkedin,
+      bio: memberBio,
+      sortOrder: Number(memberSortOrder),
+    };
+
+    setActionLoading("save-member");
+    try {
+      const method = editingMember ? "PUT" : "POST";
+      const res = await fetch("/api/admin/leadership", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (editingMember) {
+          setLeadershipMembers(
+            leadershipMembers.map((m: any) => m.id === editingMember.id ? data.member : m)
+          );
+          triggerToast("Member updated successfully.");
+        } else {
+          setLeadershipMembers([...leadershipMembers, data.member]);
+          triggerToast("Member added successfully.");
+        }
+        setIsLeadershipModalOpen(false);
+      } else {
+        triggerToast(data.error || "Save failed.", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast("An error occurred.", "error");
+    } finally {
+      setActionLoading(null);
+    }
+  };
   
   // States
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -585,6 +816,7 @@ export default function AdminDashboardClient({
             { id: "publications", label: "Review Publications", icon: <FileText className="w-4 h-4" /> },
             { id: "fellowships", label: "Fellowship Applications", icon: <GraduationCap className="w-4 h-4" /> },
             { id: "ambassadors", label: "Ambassador Applications", icon: <Flag className="w-4 h-4" /> },
+            { id: "leadership", label: "Leadership Network", icon: <ShieldCheck className="w-4 h-4" /> },
             { id: "emails", label: "Email Audit Log", icon: <Mail className="w-4 h-4" /> },
             { id: "video", label: "Video Section", icon: <Video className="w-4 h-4" /> },
             { id: "chapters", label: "Chapter Photos", icon: <Building className="w-4 h-4" /> },
@@ -1315,6 +1547,120 @@ export default function AdminDashboardClient({
               </motion.div>
             )}
 
+            {activeTab === "leadership" && (
+              <motion.div
+                key="leadership"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                <div className="border-b border-slate-800 pb-3 mb-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-bold font-heading text-research-blue">Leadership & Research Network</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Manage advisory board, executive officers, and research associates.</p>
+                  </div>
+                  <button
+                    onClick={handleOpenAddModal}
+                    className="flex items-center space-x-1.5 px-4.5 py-2.5 bg-accent-blue hover:bg-blue-500 text-[11px] font-bold text-white rounded-xl transition-all cursor-pointer shadow-md shadow-accent-blue/15"
+                  >
+                    <span>Add Network Member</span>
+                  </button>
+                </div>
+
+                {/* Grouped by Section */}
+                <div className="space-y-8">
+                  {["Board of Advisors", "Executive Leadership", "Research & Innovation Council", "Founding Research Associates", "Mentors & Academic Experts", "Mental Health & Human Development Division"].map((sectionName) => {
+                    const sectionMembers = leadershipMembers.filter(
+                      (m: any) => m.section.toLowerCase().trim() === sectionName.toLowerCase().trim()
+                    ).sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+                    return (
+                      <div key={sectionName} className="space-y-4">
+                        <div className="border-l-2 border-accent-blue pl-3 flex items-center justify-between py-1">
+                          <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">{sectionName}</h4>
+                          <span className="text-[10px] text-slate-500 font-mono font-bold bg-slate-950 px-2 py-0.5 rounded-md border border-slate-900">{sectionMembers.length} Members</span>
+                        </div>
+
+                        {sectionMembers.length === 0 ? (
+                          <div className="bg-slate-950/20 border border-slate-900 rounded-2xl py-6 text-center text-[11px] text-slate-600 font-medium">
+                            No members added to this section yet.
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {sectionMembers.map((member: any) => {
+                              let tags: string[] = [];
+                              try {
+                                if (typeof member.expertise === "string") {
+                                  tags = JSON.parse(member.expertise);
+                                } else if (Array.isArray(member.expertise)) {
+                                  tags = member.expertise;
+                                }
+                              } catch {
+                                tags = [];
+                              }
+
+                              const isDeleting = actionLoading === `delete-${member.id}`;
+
+                              return (
+                                <div key={member.id} className="bg-slate-950/50 border border-slate-800 p-4 rounded-2xl flex gap-3 text-xs justify-between items-start shadow-sm hover:border-slate-700 transition-colors">
+                                  <div className="flex gap-3">
+                                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shrink-0">
+                                      <img src={member.photo} alt={member.name} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="space-y-1 text-left">
+                                      <p className="font-bold text-slate-200">{member.name}</p>
+                                      <p className="text-[10px] text-accent-blue font-semibold">{member.role}</p>
+                                      <p className="text-[10px] text-slate-400 font-semibold">{member.institution}</p>
+                                      <div className="flex flex-wrap gap-1 pt-1">
+                                        {tags.slice(0, 3).map((tag: string) => (
+                                          <span key={tag} className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800/80 text-slate-500 uppercase font-mono">{tag}</span>
+                                        ))}
+                                        {tags.length > 3 && <span className="text-[8px] text-slate-600 font-bold font-mono">+{tags.length - 3} more</span>}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-col gap-1.5 items-end justify-between self-stretch shrink-0">
+                                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800/60 text-slate-500">Order: {member.sortOrder}</span>
+                                    <div className="flex items-center space-x-1.5">
+                                      <button
+                                        onClick={() => handleOpenEditModal(member)}
+                                        className="p-1.5 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900/40 text-slate-400 hover:text-white transition-all cursor-pointer"
+                                        title="Edit Member"
+                                      >
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteMember(member.id)}
+                                        disabled={isDeleting}
+                                        className="p-1.5 rounded-lg border border-slate-800 hover:border-rose-900 bg-slate-900/40 hover:bg-rose-950/20 text-slate-400 hover:text-rose-400 transition-all cursor-pointer disabled:opacity-50"
+                                        title="Delete Member"
+                                      >
+                                        {isDeleting ? (
+                                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        ) : (
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          </svg>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
             {/* ======================================================== */}
             {/* TAB: USER ROLES MANAGEMENT */}
             {/* ======================================================== */}
@@ -1447,6 +1793,220 @@ export default function AdminDashboardClient({
               </motion.div>
             )}
 
+          </AnimatePresence>
+
+          {/* LEADERSHIP ADD/EDIT MODAL */}
+          <AnimatePresence>
+            {isLeadershipModalOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+                onClick={() => setIsLeadershipModalOpen(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, y: 15 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.95, y: 15 }}
+                  className="bg-[#0B0F19] border border-slate-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative text-slate-350"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="h-1.5 w-full bg-gradient-to-r from-accent-blue via-blue-500 to-indigo-500" />
+                  
+                  <button
+                    onClick={() => setIsLeadershipModalOpen(false)}
+                    className="absolute top-6 right-6 p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+
+                  <form onSubmit={handleSaveMember} className="p-6 md:p-8 space-y-4 max-h-[85vh] overflow-y-auto">
+                    <div className="border-b border-slate-800 pb-3">
+                      <h3 className="text-base font-bold font-heading text-white">
+                        {editingMember ? "Edit Network Member" : "Add Network Member"}
+                      </h3>
+                      <p className="text-[11px] text-slate-400">Configure credentials, organization, and bio details.</p>
+                    </div>
+
+                    <div className="space-y-3.5 text-xs text-left">
+                      {/* Image Upload Area */}
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Profile Photo *</label>
+                        <div className="flex gap-4 items-center">
+                          <div className="w-16 h-16 rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shrink-0 flex items-center justify-center relative">
+                            {photoPreview ? (
+                              <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                            ) : (
+                              <ImageIcon className="w-6 h-6 text-slate-700" />
+                            )}
+                            {photoUploading && (
+                              <div className="absolute inset-0 bg-[#0B0F19]/80 backdrop-blur-xs flex items-center justify-center">
+                                <Loader2 className="w-4 h-4 animate-spin text-accent-blue" />
+                              </div>
+                            )}
+                          </div>
+
+                          <div
+                            onDragOver={(e) => { e.preventDefault(); setIsDragOverPhoto(true); }}
+                            onDragLeave={() => setIsDragOverPhoto(false)}
+                            onDrop={handlePhotoDrop}
+                            onClick={() => photoFileRef.current?.click()}
+                            className={`flex-1 h-16 border border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${
+                              isDragOverPhoto 
+                                ? "bg-accent-blue/10 border-accent-blue" 
+                                : "bg-slate-950/40 border-slate-800 hover:border-slate-700 hover:bg-slate-950"
+                            }`}
+                          >
+                            <input
+                              ref={photoFileRef}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handlePhotoSelect}
+                            />
+                            <Upload className={`w-4 h-4 mb-0.5 ${isDragOverPhoto ? "text-accent-blue animate-bounce" : "text-slate-500"}`} />
+                            <span className="text-[10px] font-bold text-slate-400">
+                              {photoUploading ? "Uploading..." : "Drag photo or click to upload"}
+                            </span>
+                            <span className="text-[8px] text-slate-500 font-medium">Auto-compressed client-side</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Name */}
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Full Name *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Dr. Sameer Kalra"
+                          value={memberName}
+                          onChange={e => setMemberName(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-650 rounded-xl py-2 px-3 focus:outline-none focus:border-accent-blue transition-all"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Role */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Role / Designation *</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Clinical Advisor"
+                            value={memberRole}
+                            onChange={e => setMemberRole(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-650 rounded-xl py-2 px-3 focus:outline-none focus:border-accent-blue transition-all"
+                          />
+                        </div>
+                        {/* Institution */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Institution *</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Sir Ganga Ram Hospital"
+                            value={memberInstitution}
+                            onChange={e => setMemberInstitution(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-655 rounded-xl py-2 px-3 focus:outline-none focus:border-accent-blue transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Section & SortOrder */}
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="col-span-2 space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Network Section *</label>
+                          <select
+                            value={memberSection}
+                            onChange={e => setMemberSection(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl py-2.5 px-2.5 focus:outline-none focus:border-accent-blue transition-all"
+                          >
+                            <option value="Board of Advisors">Board of Advisors</option>
+                            <option value="Executive Leadership">Executive Leadership</option>
+                            <option value="Research & Innovation Council">Research & Innovation Council</option>
+                            <option value="Founding Research Associates">Founding Research Associates</option>
+                            <option value="Mentors & Academic Experts">Mentors & Academic Experts</option>
+                            <option value="Mental Health & Human Development Division">Mental Health & Human Development Division</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sort Order</label>
+                          <input
+                            type="number"
+                            required
+                            value={memberSortOrder}
+                            onChange={e => setMemberSortOrder(Number(e.target.value))}
+                            className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl py-2 px-3 focus:outline-none focus:border-accent-blue transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {/* LinkedIn */}
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">LinkedIn URL *</label>
+                        <input
+                          type="url"
+                          required
+                          placeholder="https://linkedin.com/in/..."
+                          value={memberLinkedin}
+                          onChange={e => setMemberLinkedin(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-655 rounded-xl py-2 px-3 focus:outline-none focus:border-accent-blue transition-all"
+                        />
+                      </div>
+
+                      {/* Expertise */}
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expertise Tags</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Clinical Research, Immunology (comma separated)"
+                          value={memberExpertise}
+                          onChange={e => setMemberExpertise(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-655 rounded-xl py-2 px-3 focus:outline-none focus:border-accent-blue transition-all"
+                        />
+                      </div>
+
+                      {/* Bio */}
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Biography *</label>
+                        <textarea
+                          required
+                          rows={3}
+                          placeholder="Detailed background information..."
+                          value={memberBio}
+                          onChange={e => setMemberBio(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-655 rounded-xl py-2 px-3 focus:outline-none focus:border-accent-blue transition-all resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-800 flex items-center justify-end space-x-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setIsLeadershipModalOpen(false)}
+                        className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer font-bold text-xs"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={actionLoading === "save-member" || photoUploading}
+                        className="flex items-center space-x-1 px-5 py-2 bg-accent-blue hover:bg-blue-500 text-white rounded-xl transition-all cursor-pointer font-bold text-xs disabled:opacity-65"
+                      >
+                        {actionLoading === "save-member" ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5" />
+                        )}
+                        <span>{actionLoading === "save-member" ? "Saving..." : "Save Member"}</span>
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              </motion.div>
+            )}
           </AnimatePresence>
 
         </div>

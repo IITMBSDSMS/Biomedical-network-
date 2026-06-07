@@ -687,6 +687,39 @@ const institution = {
   },
 };
 
+// ── LeadershipMember ─────────────────────────────────────────────────────────
+
+const leadershipMember = {
+  async findMany(args?: { orderBy?: any; take?: number }): Promise<any[]> {
+    let q: any = sb().from("leadership_members").select("*");
+    if (args?.orderBy?.sortOrder === "asc") q = q.order("sortOrder", { ascending: true });
+    if (args?.orderBy?.sortOrder === "desc") q = q.order("sortOrder", { ascending: false });
+    if (args?.take) q = q.limit(args.take);
+    const { data, error } = await q;
+    if (error) err(error, "leadershipMember.findMany");
+    return data || [];
+  },
+
+  async create(args: { data: any }): Promise<any> {
+    const payload = { ...args.data, id: args.data.id || uuid(), createdAt: now(), updatedAt: now() };
+    const { data, error } = await (sb().from("leadership_members").insert(payload).select("*") as any).single();
+    if (error) err(error, "leadershipMember.create");
+    return data;
+  },
+
+  async update(args: { where: { id: string }; data: any }): Promise<any> {
+    const { data, error } = await (sb().from("leadership_members").update({ ...args.data, updatedAt: now() }).eq("id", args.where.id).select("*") as any).single();
+    if (error) err(error, "leadershipMember.update");
+    return data;
+  },
+
+  async delete(args: { where: { id: string } }): Promise<any> {
+    const { data, error } = await (sb().from("leadership_members").delete().eq("id", args.where.id).select("*") as any).single();
+    if (error) err(error, "leadershipMember.delete");
+    return data;
+  }
+};
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export const db = {
@@ -702,6 +735,7 @@ export const db = {
   trainingProgress,
   certificate,
   institution,
+  leadershipMember,
 };
 
 // Backward-compatible alias (drop-in replacement for `import { prisma } from "@/lib/db"`)

@@ -69,6 +69,11 @@ export default async function AdminPage() {
     take: 12,
   });
 
+  // Fetch leadership members
+  const leadershipMembers = await prisma.leadershipMember.findMany({
+    orderBy: { sortOrder: "asc" },
+  });
+
   return (
     <div className="relative min-h-screen bg-background flex flex-col justify-between overflow-x-hidden">
       <ScientificBackground />
@@ -83,6 +88,7 @@ export default async function AdminPage() {
           initialEmailLogs={emailLogs}
           initialAmbassadorApplications={ambassadorApplications}
           projectCount={projectCount}
+          initialLeadershipMembers={leadershipMembers}
         />
       </main>
 

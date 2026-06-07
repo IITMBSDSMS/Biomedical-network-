@@ -263,14 +263,58 @@ interface LandingClientProps {
   currentUser: HealixUser | null;
   featuredResearchers: any[];
   featuredPublications: any[];
+  leadershipMembers?: any[];
 }
 
 export default function LandingClient({
   currentUser,
   featuredResearchers,
   featuredPublications,
+  leadershipMembers = [],
 }: LandingClientProps) {
   
+  const dynamicSections = React.useMemo(() => {
+    if (!leadershipMembers || leadershipMembers.length === 0) {
+      return leadershipSections;
+    }
+
+    const sectionsOrder = [
+      { title: "Board of Advisors", subtitle: "Guiding the scientific and strategic direction of BioLabs." },
+      { title: "Executive Leadership", subtitle: "Executive leaders driving the execution and operations of BioLabs." },
+      { title: "Research & Innovation Council", subtitle: "Driving interdisciplinary research across healthcare, biotechnology, AI, public health, and biomedical engineering." },
+      { title: "Founding Research Associates", subtitle: "Researchers and innovators contributing to the BioLabs mission from day one." },
+      { title: "Mentors & Academic Experts", subtitle: "Empowering students through mentorship, research, and collaboration." },
+      { title: "Mental Health & Human Development Division", subtitle: "Pioneering research and advocacy in psychology, cognitive sciences, and human development." },
+    ];
+
+    return sectionsOrder.map(sec => {
+      const members = leadershipMembers
+        .filter(m => m.section.toLowerCase().trim() === sec.title.toLowerCase().trim())
+        .map(m => {
+          let expertiseTags: string[] = [];
+          try {
+            if (typeof m.expertise === "string") {
+              expertiseTags = JSON.parse(m.expertise);
+            } else if (Array.isArray(m.expertise)) {
+              expertiseTags = m.expertise;
+            }
+          } catch (e) {
+            console.error("Failed parsing expertise for", m.name, e);
+          }
+          return {
+            ...m,
+            expertise: expertiseTags,
+          };
+        });
+      
+      return {
+        title: sec.title,
+        subtitle: sec.subtitle,
+        members,
+      };
+    }).filter(sec => sec.members.length > 0);
+  }, [leadershipMembers]);
+
   const [selectedProfileMember, setSelectedProfileMember] = React.useState<any | null>(null);
   const [activeBookIndex, setActiveBookIndex] = React.useState<number | null>(null);
   const isBookOpen = activeBookIndex !== null;
@@ -901,11 +945,11 @@ export default function LandingClient({
           </div>
 
           {/* Subsections Loop */}
-          {leadershipSections.map((section) => (
-            <div key={section.title} className="mb-24 last:mb-0">
+          {dynamicSections.map((section) => (
+            <div key={section.title} className="pt-20 pb-4 first:pt-0">
               
               {/* Subsection Header */}
-              <div className="text-left mb-10 max-w-3xl border-l-2 border-accent-blue pl-4">
+              <div className="text-left mb-12 max-w-3xl border-l-2 border-accent-blue pl-4">
                 <h3 className="text-xl sm:text-2xl font-heading font-extrabold text-white uppercase tracking-tight">
                   {section.title}
                 </h3>
@@ -914,37 +958,61 @@ export default function LandingClient({
                 </p>
               </div>
 
-              {/* Members Grid */}
-              <div className={`grid grid-cols-1 sm:grid-cols-2 ${
-                section.members.length === 2 
-                  ? "lg:grid-cols-2 max-w-4xl mx-auto" 
-                  : section.members.length === 3 
-                  ? "lg:grid-cols-3 max-w-6xl mx-auto" 
-                  : "lg:grid-cols-4"
-              } gap-6`}>
+              {/* Members Grid with Staggered Scroll-Into-View Animation */}
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0 },
+                  show: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.06
+                    }
+                  }
+                }}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, margin: "-80px" }}
+                className={`grid grid-cols-1 sm:grid-cols-2 ${
+                  section.members.length === 2 
+                    ? "lg:grid-cols-2 max-w-4xl mx-auto" 
+                    : section.members.length === 3 
+                    ? "lg:grid-cols-3 max-w-6xl mx-auto" 
+                    : "lg:grid-cols-4"
+                } gap-6`}
+              >
                 {section.members.map((member) => (
-                  <div
+                  <motion.div
                     key={member.id}
-                    className="bg-[#0B0F19]/65 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/85 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-accent-blue/5 rounded-3xl p-5 shadow-xl flex flex-col justify-between group overflow-hidden transition-all duration-300 relative"
+                    variants={{
+                      hidden: { opacity: 0, y: 24 },
+                      show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 14 } }
+                    }}
+                    className="group relative rounded-3xl bg-[#0B0F19]/65 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/80 p-5 shadow-xl flex flex-col justify-between overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-accent-blue/5"
                   >
+                    {/* Radial Background Glow on Hover */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-accent-blue/[0.04] to-transparent opacity-0 group-hover:opacity-100 rounded-3xl transition-opacity duration-500 pointer-events-none" />
+                    
+                    {/* Glowing outer margin outline on Hover */}
+                    <div className="absolute -inset-[1px] bg-gradient-to-r from-accent-blue/20 via-blue-500/10 to-indigo-500/20 rounded-3xl opacity-0 group-hover:opacity-100 blur-xs transition-opacity duration-500 pointer-events-none" />
+
                     {/* Top Content */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 relative z-10">
                       {/* Photo Frame */}
                       <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-800/80 shadow-md">
                         <img
                           src={member.photo}
                           alt={member.name}
-                          className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500 ease-out"
+                          className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-500 ease-out"
                         />
                         {/* Gradient Shadow */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-85" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-85" />
                         
                         {/* LinkedIn icon overlay */}
                         <a
                           href={member.linkedin}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-950/80 backdrop-blur-xs border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-[#0077B5] hover:bg-[#0077B5] transition-all shadow-md"
+                          className="absolute top-3.5 right-3.5 w-8 h-8 rounded-lg bg-slate-950/80 backdrop-blur-xs border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-[#0077B5] hover:bg-[#0077B5] transition-all shadow-md"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <LinkedinIcon className="w-4 h-4" />
@@ -953,7 +1021,7 @@ export default function LandingClient({
 
                       {/* Header Info */}
                       <div className="space-y-1 text-left">
-                        <h4 className="text-sm font-bold text-slate-100 group-hover:text-accent-blue transition-colors">
+                        <h4 className="text-sm font-extrabold text-slate-100 group-hover:text-accent-blue transition-colors duration-300">
                           {member.name}
                         </h4>
                         <p className="text-[10px] text-accent-blue font-bold uppercase tracking-wider leading-tight">
@@ -966,7 +1034,7 @@ export default function LandingClient({
 
                       {/* Expertise Badges */}
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        {member.expertise.map((tag) => (
+                        {member.expertise.map((tag: string) => (
                           <span
                             key={tag}
                             className="text-[8px] font-bold px-2 py-0.5 rounded bg-slate-900/80 text-slate-400 border border-slate-800/80 tracking-wide font-mono uppercase"
@@ -978,7 +1046,7 @@ export default function LandingClient({
                     </div>
 
                     {/* Bottom Action */}
-                    <div className="pt-5 border-t border-slate-900/60 mt-5">
+                    <div className="pt-5 border-t border-slate-900/60 mt-5 relative z-10">
                       <button
                         onClick={() => setSelectedProfileMember(member)}
                         className="w-full py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900/30 hover:bg-slate-900 text-slate-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center space-x-1 shadow-inner cursor-pointer"
@@ -988,9 +1056,9 @@ export default function LandingClient({
                       </button>
                     </div>
 
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
 
             </div>
           ))}

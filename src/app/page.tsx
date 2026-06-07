@@ -40,6 +40,16 @@ export default async function Home() {
     console.warn("Database offline, using empty featuredPublications fallback:", err);
   }
 
+  // Query leadership members
+  let leadershipMembers: any[] = [];
+  try {
+    leadershipMembers = await prisma.leadershipMember.findMany({
+      orderBy: { sortOrder: "asc" },
+    });
+  } catch (err) {
+    console.warn("Database offline, using empty leadershipMembers fallback:", err);
+  }
+
   return (
     <div className="relative min-h-screen bg-background flex flex-col justify-between overflow-x-hidden">
       {/* Scientific SVG Animated Canvas */}
@@ -54,6 +64,7 @@ export default async function Home() {
           currentUser={currentUser}
           featuredResearchers={featuredResearchers}
           featuredPublications={featuredPublications}
+          leadershipMembers={leadershipMembers}
         />
       </main>
 

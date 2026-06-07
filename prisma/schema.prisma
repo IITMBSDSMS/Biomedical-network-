@@ -186,3 +186,20 @@ model AmbassadorApplication {
 
   @@map("ambassador_applications")
 }
+
+model LeadershipMember {
+  id          String   @id @default(uuid())
+  section     String   // e.g. "Board of Advisors", "Executive Leadership", etc.
+  name        String
+  role        String
+  institution String
+  expertise   String   @default("[]") // JSON string list
+  photo       String
+  linkedin    String
+  bio         String
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("leadership_members")
+}

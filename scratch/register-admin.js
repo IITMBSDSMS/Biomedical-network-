@@ -9,7 +9,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 async function main() {
   const email = "admin@biolabsresearch-healix.com";
-  const password = "IITIAN@1234m";
+  const password = "admin2026";
 
   console.log(`Checking if user ${email} exists in Supabase Auth...`);
   
