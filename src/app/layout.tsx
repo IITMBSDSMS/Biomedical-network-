@@ -128,7 +128,7 @@ const jsonLd = {
       },
       sameAs: [
         "https://healix-technologies.com",
-        "https://linkedin.com/company/healix-biolabs",
+        "https://www.linkedin.com/showcase/biolabsofficial/?viewAsMember=true",
         "https://twitter.com/HealixBioLabs",
       ],
       contactPoint: {
