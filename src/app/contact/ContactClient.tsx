@@ -67,11 +67,15 @@ export default function ContactClient({ currentUser }: ContactClientProps) {
             </div>
             <div className="flex items-center space-x-3">
               <Mail className="w-5 h-5 text-accent-blue shrink-0" />
-              <span>relations@biolabsresearch-healix.com</span>
+              <a href="mailto:admin@biolabsresearch-healix.com" className="hover:text-accent-blue transition-colors">
+                admin@biolabsresearch-healix.com
+              </a>
             </div>
             <div className="flex items-center space-x-3">
               <Phone className="w-5 h-5 text-primary-yellow shrink-0" />
-              <span>+91 11 4050 XXXX</span>
+              <a href="tel:+919540694581" className="hover:text-primary-yellow transition-colors">
+                +91 95406 94581
+              </a>
             </div>
           </div>
 

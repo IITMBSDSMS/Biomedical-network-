@@ -101,7 +101,7 @@ export default async function PrivacyPage() {
           <div className="bg-slate-900/30 border border-slate-800 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <h4 className="text-xs font-bold text-white uppercase tracking-wider">Have privacy concerns?</h4>
-              <p className="text-[11px] text-slate-500 mt-1">Get in touch with our Academic Relations officer at relations@biolabsresearch-healix.com.</p>
+              <p className="text-[11px] text-slate-500 mt-1">Get in touch with our Academic Relations officer at <a href="mailto:admin@biolabsresearch-healix.com" className="text-[#3B82F6] hover:underline">admin@biolabsresearch-healix.com</a>.</p>
             </div>
           </div>
 
