@@ -1047,7 +1047,7 @@ export default function TrainingClient() {
           <div className="max-w-2xl w-full border border-slate-800 bg-[#0B0F19] rounded-2xl shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[440px] max-h-[90vh] text-slate-300">
             
             {/* Header top bar */}
-            <div className="p-5 border-b border-slate-850 flex items-center justify-between">
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between">
               <div className="text-left">
                 <span className="text-[9px] font-bold text-accent-blue uppercase tracking-widest font-mono">Module 0{activeModule.index + 1} Course Material</span>
                 <h3 className="text-base font-heading font-extrabold text-white uppercase tracking-tight leading-none mt-1">
@@ -1138,7 +1138,7 @@ export default function TrainingClient() {
             </div>
 
             {/* Bottom slides navigation bar */}
-            <div className="p-4 sm:p-5 border-t border-slate-850 bg-slate-950/30 flex items-center justify-between">
+            <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-950/30 flex items-center justify-between">
               {!showQuiz ? (
                 <>
                   <button
