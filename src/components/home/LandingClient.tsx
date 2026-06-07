@@ -972,12 +972,14 @@ export default function LandingClient({
                 initial="hidden"
                 whileInView="show"
                 viewport={{ once: true, margin: "-80px" }}
-                className={`grid grid-cols-1 sm:grid-cols-2 ${
-                  section.members.length === 2 
-                    ? "lg:grid-cols-2 max-w-4xl mx-auto" 
-                    : section.members.length === 3 
-                    ? "lg:grid-cols-3 max-w-6xl mx-auto" 
-                    : "lg:grid-cols-4"
+                className={`grid grid-cols-1 ${
+                  section.members.length === 1
+                    ? "sm:grid-cols-1 max-w-sm mx-auto"
+                    : section.members.length === 2
+                    ? "sm:grid-cols-2 lg:grid-cols-2 max-w-3xl mx-auto"
+                    : section.members.length === 3
+                    ? "sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto"
+                    : "sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
                 } gap-6`}
               >
                 {section.members.map((member) => (
