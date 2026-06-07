@@ -74,17 +74,18 @@ export async function POST(request: Request) {
 
     const { url } = await uploadFile(file, folder);
 
-    // Update config
-    const config = readConfig();
-
+    // Update config only if modifying static content settings
+    let config = null;
     if (type === "video-cover") {
+      config = readConfig();
       config.videoSection = { ...config.videoSection, coverImage: url };
+      writeConfig(config);
     } else if (type === "chapter-photo" && chapterId) {
+      config = readConfig();
       if (!config.chapters) config.chapters = {};
       config.chapters[chapterId] = { ...config.chapters[chapterId], image: url };
+      writeConfig(config);
     }
-
-    writeConfig(config);
 
     return NextResponse.json({ success: true, url, config });
   } catch (err: any) {
