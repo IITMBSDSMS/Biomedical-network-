@@ -989,13 +989,13 @@ export default function LandingClient({
                       hidden: { opacity: 0, y: 24 },
                       show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 14 } }
                     }}
-                    className="group relative rounded-3xl bg-[#0B0F19]/65 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/80 p-5 shadow-xl flex flex-col justify-between overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-accent-blue/5"
+                    className="group relative rounded-3xl bg-[#0F1424]/50 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/80 p-5 shadow-xl flex flex-col justify-between overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-accent-blue/10"
                   >
                     {/* Radial Background Glow on Hover */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-accent-blue/[0.04] to-transparent opacity-0 group-hover:opacity-100 rounded-3xl transition-opacity duration-500 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-accent-blue/[0.05] via-transparent to-transparent opacity-0 group-hover:opacity-100 rounded-3xl transition-opacity duration-500 pointer-events-none" />
                     
-                    {/* Glowing outer margin outline on Hover */}
-                    <div className="absolute -inset-[1px] bg-gradient-to-r from-accent-blue/20 via-blue-500/10 to-indigo-500/20 rounded-3xl opacity-0 group-hover:opacity-100 blur-xs transition-opacity duration-500 pointer-events-none" />
+                    {/* Glowing outer border highlight on Hover */}
+                    <div className="absolute -inset-[1px] bg-gradient-to-r from-accent-blue/30 via-blue-500/20 to-indigo-500/30 rounded-3xl opacity-0 group-hover:opacity-100 blur-xs transition-opacity duration-500 pointer-events-none" />
 
                     {/* Top Content */}
                     <div className="space-y-4 relative z-10">
@@ -1004,7 +1004,7 @@ export default function LandingClient({
                         <img
                           src={member.photo}
                           alt={member.name}
-                          className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-500 ease-out"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                         />
                         {/* Gradient Shadow */}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-85" />
@@ -1023,7 +1023,7 @@ export default function LandingClient({
 
                       {/* Header Info */}
                       <div className="space-y-1 text-left">
-                        <h4 className="text-sm font-extrabold text-slate-100 group-hover:text-accent-blue transition-colors duration-300">
+                        <h4 className="text-sm font-extrabold text-white group-hover:text-accent-blue transition-colors duration-300">
                           {member.name}
                         </h4>
                         <p className="text-[10px] text-accent-blue font-bold uppercase tracking-wider leading-tight">
@@ -1039,7 +1039,7 @@ export default function LandingClient({
                         {member.expertise.map((tag: string) => (
                           <span
                             key={tag}
-                            className="text-[8px] font-bold px-2 py-0.5 rounded bg-slate-900/80 text-slate-400 border border-slate-800/80 tracking-wide font-mono uppercase"
+                            className="text-[8px] font-bold px-2 py-0.5 rounded bg-blue-950/20 text-accent-blue border border-blue-900/35 tracking-wide font-mono uppercase"
                           >
                             {tag}
                           </span>
@@ -1051,7 +1051,7 @@ export default function LandingClient({
                     <div className="pt-5 border-t border-slate-900/60 mt-5 relative z-10">
                       <button
                         onClick={() => setSelectedProfileMember(member)}
-                        className="w-full py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900/30 hover:bg-slate-900 text-slate-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center space-x-1 shadow-inner cursor-pointer"
+                        className="w-full py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 bg-gradient-to-r from-slate-950 to-slate-900 hover:from-accent-blue/10 hover:to-indigo-500/10 text-slate-350 hover:text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 shadow-lg shadow-black/35 hover:shadow-accent-blue/5 cursor-pointer"
                       >
                         <span>View Profile</span>
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

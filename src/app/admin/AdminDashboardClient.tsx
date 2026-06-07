@@ -141,8 +141,8 @@ export default function AdminDashboardClient({
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 300;
-        const MAX_HEIGHT = 300;
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
         let width = img.width;
         let height = img.height;
 
@@ -183,7 +183,7 @@ export default function AdminDashboardClient({
                   if (!res.ok) throw new Error(data.error || "Upload failed");
                   setMemberPhoto(data.url);
                   setPhotoPreview(data.url);
-                  triggerToast("Photo uploaded and compressed successfully.");
+                  triggerToast("Photo uploaded successfully.");
                 } catch (err: any) {
                   triggerToast(err.message || "Photo upload failed.", "error");
                 } finally {
@@ -195,7 +195,7 @@ export default function AdminDashboardClient({
               }
             },
             "image/jpeg",
-            0.85
+            0.92
           );
         } else {
           setPhotoUploading(false);
