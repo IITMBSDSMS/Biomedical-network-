@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 import HealixSplash from "@/components/ui/HealixSplash";
 import AuthSync from "@/components/auth/AuthSync";
+import PWARegister from "@/components/pwa/PWARegister";
+import BottomNav from "@/components/navigation/BottomNav";
+import { getCurrentUser } from "@/lib/auth";
 
 const displayFont = { variable: "font-heading" };
 const bodyFont = { variable: "font-sans" };
@@ -180,11 +183,13 @@ const jsonLd = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const currentUser = await getCurrentUser();
+
   return (
     <html
       lang="en"
@@ -206,12 +211,16 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#0B0F19" />
         <meta name="msapplication-TileImage" content="/logo.png" />
       </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
+      <body className="min-h-full flex flex-col bg-background text-foreground font-sans pb-20 lg:pb-0">
+        {/* PWA registration listener */}
+        <PWARegister />
         {/* Global session splash preloader — shown once per browser session */}
         <HealixSplash />
         {/* Client-to-server token synchronization listener */}
         <AuthSync />
         {children}
+        {/* Mobile Bottom Navigation Bar */}
+        <BottomNav currentUser={currentUser} />
       </body>
     </html>
   );
